@@ -1,0 +1,8 @@
+config/
+.mypy_cache
+__pycache__
+bot.log*
+data.json
+.pytest_cache
+results.xml
+.vscode
