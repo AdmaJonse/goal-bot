@@ -60,6 +60,10 @@ class Highlight:
             log.error("Could not determine goal scorer. Delaying tweet.")
             return None
 
+        if self.game_data is None:
+            log.error("There is no game data for this game.")
+            return None
+
         goal_string   : str = ""
         assist_string : str = ""
         footer        : str = ""
