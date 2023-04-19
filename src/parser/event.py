@@ -22,14 +22,15 @@ class EventParser(Parser):
         Parse the static data for this game.
         """
         self.get_data()
-        all_plays : Any = self.data["liveData"]["plays"]["allPlays"]
-        for play in all_plays:
-            event_type : str = play["result"]["event"]
-            event_id   : int = int(play["about"]["eventId"])
-            if event_type != "Goal":
-                continue
-            if event_id == self.event_id:
-                if event_type == "Goal":
-                    return Event(play)
-                return None
+        if self.data:
+            all_plays : Any = self.data["liveData"]["plays"]["allPlays"]
+            for play in all_plays:
+                event_type : str = play["result"]["event"]
+                event_id   : int = int(play["about"]["eventId"])
+                if event_type != "Goal":
+                    continue
+                if event_id == self.event_id:
+                    if event_type == "Goal":
+                        return Event(play)
+                    return None
         return None

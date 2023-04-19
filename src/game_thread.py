@@ -3,6 +3,7 @@ TODO
 """
 
 from datetime import datetime, timezone
+from typing import Optional
 import pause
 
 from src.data.game_data import GameData
@@ -17,10 +18,10 @@ class GameThread:
     """
 
     def __init__(self, game_id : int):
-        self.game_id    : int      = game_id
-        self.game_data  : GameData = GameDataParser(self.game_id).parse()
-        self.start_time : datetime = datetime.now(timezone.utc)
-        self.parser     : ContentParser = ContentParser(self.game_id, self.start_time)
+        self.game_id    : int                = game_id
+        self.game_data  : Optional[GameData] = GameDataParser(self.game_id).parse()
+        self.start_time : datetime           = datetime.now(timezone.utc)
+        self.parser     : ContentParser      = ContentParser(self.game_id, self.start_time)
 
 
     def is_game_over(self):
@@ -35,10 +36,13 @@ class GameThread:
         """
         TODO
         """
-        log.info("Game " + str(self.game_id) + ": Pausing until " + str(self.game_data.date))
-        pause.until(self.game_data.date)
-        log.info("Game " + str(self.game_id) + ": The game is live.")
-        while not self.is_game_over():
-            self.parser.parse()
-            pause.seconds(5)
-        log.info("Game " + str(self.game_id) + ": The game is over.")
+        if self.game_data is not None:
+            log.info("Game " + str(self.game_id) + ": Pausing until " + str(self.game_data.date))
+            pause.until(self.game_data.date)
+            log.info("Game " + str(self.game_id) + ": The game is live.")
+            while not self.is_game_over():
+                self.parser.parse()
+                pause.seconds(5)
+            log.info("Game " + str(self.game_id) + ": The game is over.")
+        else:
+            log.error("Could not retrieve game data for game: " + str(self.game_id))

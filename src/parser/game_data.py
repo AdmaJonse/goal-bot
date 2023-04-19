@@ -2,6 +2,8 @@
 This module handles parsing of the JSON game data.
 """
 
+from typing import Optional
+
 from src.parser.parser import Parser
 from src.data.game_data import GameData
 
@@ -14,9 +16,11 @@ class GameDataParser(Parser):
         super().__init__(game_id, "/feed/live")
 
 
-    def parse(self) -> GameData:
+    def parse(self) -> Optional[GameData]:
         """
         Parse the static data for this game.
         """
         self.get_data()
-        return GameData(self.data)
+        if self.data:
+            return GameData(self.data)
+        return None

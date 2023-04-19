@@ -1,0 +1,106 @@
+on: [push]
+name: CI
+
+env:
+  CONTAINER_NAME: goal-bot
+
+jobs:
+    lint:
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Install Python 3
+          uses: actions/setup-python@v1
+          with:
+            python-version: 3.9
+
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+
+        - name: Lint all src files
+          run: make lint
+
+    analyze:
+        runs-on: ubuntu-latest
+
+        steps:
+          - uses: actions/checkout@v3
+
+          - name: Install Python 3
+            uses: actions/setup-python@v1
+            with:
+              python-version: 3.9
+
+          - name: Install dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+
+          - name: Perform static analysis on all src files
+            run: make analyze
+
+    build:
+        needs: [lint, analyze]
+        runs-on: ubuntu-latest
+        steps:
+
+        - name: 'Checkout GitHub Action'
+          uses: actions/checkout@main
+
+        - name: Create env file
+          run: |
+            mkdir config
+            touch config/.env
+            echo BEARER_TOKEN=${{ secrets.BEARER_TOKEN }} >> config/.env
+            echo CONSUMER_KEY=${{ secrets.CONSUMER_KEY }} >> config/.env
+            echo CONSUMER_SECRET=${{ secrets.CONSUMER_SECRET }} >> config/.env
+            echo ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }} >> config/.env
+            echo ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} >> config/.env
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v1
+
+        - name: Log in to GitHub container registry
+          uses: docker/login-action@v1.10.0
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ github.token }}
+
+        - name: Lowercase the repo name and username
+          run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+        - name: Build and push container image to registry
+          uses: docker/build-push-action@v2
+          with:
+            push: true
+            tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+            file: ./Dockerfile
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+        - uses: actions/checkout@main
+          with:
+            lfs: 'true'
+
+        - name: Generate Deployment Package
+          run: zip -r deploy.zip . -x "*.git*" -x "*test*"
+
+        - name: Deploy to AWS
+          uses: einaregilsson/beanstalk-deploy@v14
+          with:
+            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            application_name: goal-bot
+            environment_name: goal-bot-env
+            version_label: ${{ github.sha }}
+            region: ca-central-1
+            deployment_package: deploy.zip
