@@ -24,6 +24,8 @@ class Highlight:
         self.description : str = data["description"]
         self.video       : str = ""
         self.game_id     : int = game_id
+        self.game_data   : Optional[GameData] = None
+        self.event       : Optional[Event]    = None
 
         for keyword in data["keywords"]:
             if keyword["type"] == "statsEventId":
@@ -33,8 +35,9 @@ class Highlight:
             if video["name"] == VIDEO_FORMAT:
                 self.video = video["url"]
 
-        self.game_data : GameData = GameDataParser(self.game_id).parse()
-        self.event     : Optional[Event] = EventParser(self.game_id, self.event_id).parse()
+        self.game_data : Optional[GameData] = GameDataParser(self.game_id).parse()
+        if self.game_data:
+            self.event : Optional[Event] = EventParser(self.game_id, self.event_id).parse()
 
 
     def __str__(self) -> str:
