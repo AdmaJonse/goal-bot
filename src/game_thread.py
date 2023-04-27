@@ -1,8 +1,9 @@
 """
-TODO
+This module defines the GameThread class.
 """
 
 from datetime import datetime, timezone
+from threading import Thread
 from typing import Optional
 import pause
 
@@ -12,9 +13,10 @@ from src.parser.game_data import GameDataParser
 from src.parser.game_state import GameStateParser
 from src.logger import log
 
-class GameThread:
+class GameThread(Thread):
     """
-    TODO
+    This class extends the Thread class to provide a custom thread used to track a game that is
+    currently in progress.
     """
 
     def __init__(self, game_id : int):
@@ -22,6 +24,7 @@ class GameThread:
         self.game_data  : Optional[GameData] = GameDataParser(self.game_id).parse()
         self.start_time : datetime           = datetime.now(timezone.utc)
         self.parser     : ContentParser      = ContentParser(self.game_id, self.start_time)
+        Thread.__init__(self)
 
 
     def is_game_over(self):
@@ -34,7 +37,7 @@ class GameThread:
 
     def run(self):
         """
-        TODO
+        Continuously parse the highlights for this game while it is in progress.
         """
         if self.game_data is not None:
             log.info("Game " + str(self.game_id) + ": Pausing until " + str(self.game_data.date))

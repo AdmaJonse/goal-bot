@@ -3,8 +3,8 @@ This module handles the main logic to check for game updates.
 """
 
 from datetime import datetime, timedelta
-from typing import List
 from threading import Thread
+from typing import List
 import pause
 
 from src import schedule
@@ -26,7 +26,7 @@ def wait_until_morning():
     pause.until(noon)
 
 
-def check_game_status(threads : List[Thread]):
+def check_game_status(threads : List[GameThread]):
     """
     Enqueue a parse command every five seconds.
     """
@@ -46,13 +46,13 @@ def check_for_updates():
         log.flush()
         log.info("Checking for games today...")
 
-        games   : List[int]    = schedule.get_todays_games()
-        threads : List[Thread] = []
+        games   : List[int]        = schedule.get_todays_games()
+        threads : List[GameThread] = []
 
         # Create a thread for each of today's games
         if games:
             for game in games:
-                threads.append(Thread(target=GameThread(game).run))
+                threads.append(GameThread(game))
 
             # Start all threads
             for thread in threads:

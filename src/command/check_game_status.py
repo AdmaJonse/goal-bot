@@ -2,20 +2,20 @@
 This module defines the Game Status Check command.
 """
 
-from threading import Thread
 from typing import List
 
 from src.command.command import Command, Priority
 from src.command.command_queue import command_queue
+from src.game_thread import GameThread
 
 class CheckGameStatus(Command):
     """
     This class defines the Post Highlight command.
     """
 
-    def __init__(self, threads : List[Thread]):
+    def __init__(self, threads : List[GameThread]):
         super().__init__("Check Game Status", Priority.NORMAL)
-        self.threads : List[Thread] = threads
+        self.threads : List[GameThread] = threads
 
 
     def execute(self) -> None:
@@ -23,6 +23,6 @@ class CheckGameStatus(Command):
         Execute the command.
         """
         for thread in self.threads:
-            if thread.is_alive():
+            if not thread.is_game_over():
                 return
         command_queue.stop()
