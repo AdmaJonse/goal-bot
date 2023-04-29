@@ -31,8 +31,12 @@ class GameThread(Thread):
         """
         Return a boolean indicating whether or not the game is over.
         """
-        state : str = GameStateParser(self.game_id).parse()
-        return state.lower().strip() == "official"
+        state     : str = GameStateParser(self.game_id).parse()
+        game_over : bool = state.lower().strip() == "official"
+        if game_over:
+            log.info("Game " + str(self.game_id) + " - state: " + state.lower().strip())
+            log.info("Game " + str(self.game_id) + " - is_game_over: " + str(game_over))
+        return game_over
 
 
     def run(self):

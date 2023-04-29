@@ -28,8 +28,13 @@ class Highlight:
         self.event       : Optional[Event]    = None
 
         for keyword in data["keywords"]:
+            log.info("keyword: " + str(keyword))
             if keyword["type"] == "statsEventId":
                 self.event_id = int(keyword["value"])
+                log.info("event id: " + str(self.event_id))
+
+        if self.event_id <= 0:
+            log.error("There is no event associated with highlight: " + str(self.id))
 
         for video in data["playbacks"]:
             if video["name"] == VIDEO_FORMAT:
@@ -38,6 +43,8 @@ class Highlight:
         self.game_data : Optional[GameData] = GameDataParser(self.game_id).parse()
         if self.game_data:
             self.event : Optional[Event] = EventParser(self.game_id, self.event_id).parse()
+        else:
+            log.error("Game data is null for game: " + str(game_id))
 
 
     def __str__(self) -> str:
