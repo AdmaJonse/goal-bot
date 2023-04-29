@@ -22,7 +22,8 @@ class CheckGameStatus(Command):
         """
         Execute the command.
         """
-        for thread in self.threads:
-            if not thread.is_game_over():
-                return
-        command_queue.stop()
+        if len(self.threads) > 0:
+            for thread in self.threads:
+                if not thread.is_game_over():
+                    return
+            command_queue.stop()
