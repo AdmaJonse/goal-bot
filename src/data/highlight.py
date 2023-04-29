@@ -28,10 +28,8 @@ class Highlight:
         self.event       : Optional[Event]    = None
 
         for keyword in data["keywords"]:
-            log.info("keyword: " + str(keyword))
             if keyword["type"] == "statsEventId":
                 self.event_id = int(keyword["value"])
-                log.info("event id: " + str(self.event_id))
 
         if self.event_id <= 0:
             log.error("There is no event associated with highlight: " + str(self.id))
