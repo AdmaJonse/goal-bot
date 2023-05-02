@@ -1,5 +1,5 @@
 """
-TODO
+This module defines the list of game threads.
 """
 
 from typing import List
@@ -7,7 +7,7 @@ from src.game_thread import GameThread
 
 class ThreadList:
     """
-    TODO
+    This class defines the list of game threads.
     """
 
     def __init__(self):
@@ -15,30 +15,30 @@ class ThreadList:
 
     def set(self, threads : List[GameThread]) -> None:
         """
-        TODO
+        Set the stored list of game threads.
         """
         self.threads = threads
 
     def append(self, thread : GameThread) -> None:
         """
-        TODO
+        Append a thread to the list of game threads.
         """
         self.threads.append(thread)
 
     def clear(self) -> None:
         """
-        TODO
+        Clear the list of game threads.
         """
         self.threads = []
 
     def get(self) -> List[GameThread]:
         """
-        TODO
+        Return the list of game threads.
         """
         return self.threads
 
     def is_empty(self) -> bool:
         """
-        TODO
+        Return a boolean indicating whether or not the list of game threads is empty.
         """
         return len(self.threads) <= 0
