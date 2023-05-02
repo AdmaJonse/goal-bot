@@ -12,7 +12,9 @@ from src.command.command_queue import command_queue
 from src.command.check_game_status import CheckGameStatus
 from src.game_thread import GameThread
 from src.logger import log
+from src.thread_list import ThreadList
 
+threads : ThreadList = ThreadList()
 
 def wait_until_morning():
     """
@@ -26,13 +28,14 @@ def wait_until_morning():
     pause.until(noon)
 
 
-def check_game_status(threads : List[GameThread]):
+def check_game_status():
     """
     Enqueue a parse command every five seconds.
     """
-    while threads:
-        command_queue.enqueue(CheckGameStatus(threads))
+    while not threads.is_empty:
+        command_queue.enqueue(CheckGameStatus(threads.get()))
         pause.seconds(30)
+    log.info("Exiting status thread")
 
 
 def check_for_updates():
@@ -46,8 +49,7 @@ def check_for_updates():
         log.flush()
         log.info("Checking for games today...")
 
-        games   : List[int]        = schedule.get_todays_games()
-        threads : List[GameThread] = []
+        games : List[int] = schedule.get_todays_games()
 
         # Create a thread for each of today's games
         if games:
@@ -55,16 +57,22 @@ def check_for_updates():
                 threads.append(GameThread(game))
 
             # Start all threads
-            for thread in threads:
+            for thread in threads.get():
                 thread.start()
 
             # Perform a periodic check to determine if the game threads have finished
-            status_thread : Thread = Thread(target=check_game_status, args=[threads])
+            status_thread : Thread = Thread(target=check_game_status)
             status_thread.start()
 
+            # Start the command server. This call will block until the shutdown command is executed.
             command_queue.start()
 
-        threads = []
+            # Stop checking the status of games
+            threads.clear()
+            status_thread.join()
+            log.info("All games are finished for the day. Pausing until tomorrow.")
 
-        log.info("All games are finished for the day. Pausing until tomorrow.")
+        else:
+            log.info("There are no games today. Pausing until tomorrow.")
+
         wait_until_morning()
