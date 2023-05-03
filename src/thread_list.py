@@ -4,7 +4,6 @@ This module defines the list of game threads.
 
 from typing import List
 from src.game_thread import GameThread
-from src.logger import log
 
 class ThreadList:
     """
