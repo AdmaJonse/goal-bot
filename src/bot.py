@@ -32,7 +32,7 @@ def check_game_status():
     """
     Enqueue a parse command every five seconds.
     """
-    while not threads.is_empty:
+    while not threads.is_empty():
         command_queue.enqueue(CheckGameStatus(threads.get()))
         pause.seconds(30)
     log.info("Exiting status thread")

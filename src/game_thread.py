@@ -27,6 +27,10 @@ class GameThread(Thread):
         Thread.__init__(self)
 
 
+    def __str__(self) -> str:
+        return "GameThread(" + str(self.game_id) + ")"
+
+
     def is_game_over(self):
         """
         Return a boolean indicating whether or not the game is over.
