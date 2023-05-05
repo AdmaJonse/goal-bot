@@ -31,9 +31,6 @@ class Highlight:
             if keyword["type"] == "statsEventId":
                 self.event_id = int(keyword["value"])
 
-        if self.event_id <= 0:
-            log.error("There is no event associated with highlight: " + str(self.id))
-
         for video in data["playbacks"]:
             if video["name"] == VIDEO_FORMAT:
                 self.video = video["url"]

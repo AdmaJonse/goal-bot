@@ -24,7 +24,7 @@ class Logger:
         self.stdout_handler.setFormatter(formatter)
 
         self.file_handler = logging.handlers.RotatingFileHandler(LOG_FILE,
-                                                                 maxBytes=1000000,
+                                                                 maxBytes=1000000000,
                                                                  backupCount=1)
         self.file_handler.setLevel(logging.INFO)
         self.file_handler.setFormatter(formatter)
