@@ -8,6 +8,7 @@ from src.command.command_queue import command_queue
 from src.command.post_highlight import PostHighlight
 from src.data.highlight import Highlight
 from src.highlight_list import HighlightList
+from src.logger import log
 from src.parser.parser import Parser
 
 
@@ -35,6 +36,7 @@ class ContentParser(Parser):
             for data in highlights:
                 highlight : Highlight = Highlight(self.game_id, data)
                 if not self.highlight_list.exists(highlight.id):
+                    log.info("Adding highlight to list: " + str(highlight.id))
                     self.highlight_list.add(highlight)
 
                     if highlight.event is not None and highlight.event.timestamp > self.start_time:
