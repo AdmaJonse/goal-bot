@@ -6,7 +6,9 @@ import logging
 import logging.handlers
 import sys
 
-LOG_FILE = "bot.log"
+LOG_FILE    : str = "bot.log"
+LOG_FORMAT  : str = "%(asctime)s | %(levelname)s | %(message)s"
+TIME_FORMAT : str = "%Y-%m-%d %H:%M:%S"
 
 class Logger:
     """
@@ -17,7 +19,7 @@ class Logger:
 
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
-        formatter = logging.Formatter('| %(levelname)s | %(message)s')
+        formatter = logging.Formatter(LOG_FORMAT, TIME_FORMAT)
 
         self.stdout_handler = logging.StreamHandler(sys.stdout)
         self.stdout_handler.setLevel(logging.INFO)
