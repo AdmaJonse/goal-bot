@@ -46,7 +46,6 @@ def check_for_updates():
     """
     while True:
 
-        log.flush()
         log.info("Checking for games today...")
 
         games : List[int] = schedule.get_todays_games()
