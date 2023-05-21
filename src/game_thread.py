@@ -2,7 +2,7 @@
 This module defines the GameThread class.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from threading import Thread
 from typing import Optional
 import pause
@@ -52,5 +52,16 @@ class GameThread(Thread):
                 self.parser.parse()
                 pause.seconds(5)
             log.info("Game " + str(self.game_id) + ": The game is over.")
+
+            # Continue checking for events for another 30 minutes after the game has ended
+            end_time     : datetime = datetime.now() + timedelta(minutes = 30)
+            current_time : datetime = datetime.now()
+            log.info("Game " + str(self.game_id) + ": Continuing to parse until " + str(end_time))
+
+            while current_time < end_time:
+                self.parser.parse()
+                pause.seconds(5)
+            log.info("Game " + str(self.game_id) + ": Parsing complete.")
+
         else:
             log.error("Could not retrieve game data for game: " + str(self.game_id))
