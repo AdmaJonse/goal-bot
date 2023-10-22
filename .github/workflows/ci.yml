@@ -104,3 +104,4 @@ jobs:
             version_label: ${{ github.sha }}
             region: ca-central-1
             deployment_package: deploy.zip
+            use_existing_version_if_available: true
