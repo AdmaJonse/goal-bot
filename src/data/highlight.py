@@ -4,14 +4,17 @@ This module defines a highlight object.
 
 from typing import Optional
 
-from src.output import templates
 from src.data.event import Event
 from src.data.game_data import GameData
+from src.output import templates
 from src.parser.event import EventParser
 from src.parser.game_data import GameDataParser
 from src.logger import log
 
-VIDEO_FORMAT : str = "FLASH_1800K_896x504"
+BASE_URL      : str = "https://players.brightcove.net/"
+BRIGHTCOVE_ID : str = "6415718365001"
+VIDEO_FORMAT  : str = "EXtG1xJ7H_default"
+VIDEO_URL     : str = BASE_URL + BRIGHTCOVE_ID + "/" + VIDEO_FORMAT + "/index.html?videoId="
 
 class Highlight:
     """
@@ -19,25 +22,18 @@ class Highlight:
     """
 
     def __init__(self, game_id, data):
-        self.id          : int = int(data["id"])
-        self.event_id    : int = 0
-        self.description : str = data["description"]
-        self.video       : str = ""
-        self.game_id     : int = game_id
-        self.game_data   : Optional[GameData] = None
-        self.event       : Optional[Event]    = None
+        self.id        : int = int(data["highlightClip"])
+        self.video     : str = ""
+        self.game_id   : int = game_id
+        self.game_data : Optional[GameData] = None
+        self.event     : Optional[Event]    = None
+        self.goal_id   : int = int(data["homeScore"]) + int(data["awayScore"])
 
-        for keyword in data["keywords"]:
-            if keyword["type"] == "statsEventId":
-                self.event_id = int(keyword["value"])
-
-        for video in data["playbacks"]:
-            if video["name"] == VIDEO_FORMAT:
-                self.video = video["url"]
+        self._video = VIDEO_URL + str(self.id)
 
         self.game_data : Optional[GameData] = GameDataParser(self.game_id).parse()
         if self.game_data:
-            self.event : Optional[Event] = EventParser(self.game_id, self.event_id).parse()
+            self.event : Optional[Event] = EventParser(self.game_id, self.goal_id).parse()
         else:
             log.error("Game data is null for game: " + str(game_id))
 

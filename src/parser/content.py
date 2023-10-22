@@ -11,6 +11,7 @@ from src.highlight_list import HighlightList
 from src.logger import log
 from src.parser.parser import Parser
 
+GAME_CENTER_URL : str = "https://api-web.nhle.com/v1/gamecenter/"
 
 class ContentParser(Parser):
     """
@@ -18,7 +19,7 @@ class ContentParser(Parser):
     """
 
     def __init__(self, game_id : int, start_time : datetime):
-        super().__init__(game_id, "/content")
+        super().__init__(game_id, "/landing", GAME_CENTER_URL)
         self.game_id        : int = game_id
         self.highlight_list : HighlightList = HighlightList()
         self.start_time     : datetime = start_time
@@ -31,13 +32,15 @@ class ContentParser(Parser):
         """
 
         self.get_data()
-        highlights = self.data["highlights"]["gameCenter"]["items"]
-        if highlights:
-            for data in highlights:
-                highlight : Highlight = Highlight(self.game_id, data)
-                if not self.highlight_list.exists(highlight.id):
-                    log.info("Adding highlight to list: " + str(highlight.id))
-                    self.highlight_list.add(highlight)
 
-                    if highlight.event is not None and highlight.event.timestamp > self.start_time:
-                        command_queue.enqueue(PostHighlight(highlight))
+        for data in self.data["summary"]["scoring"]:
+            for goal in data["goals"]:
+                if "highlightClip" in goal:
+                    highlight : Highlight = Highlight(self.game_id, goal)
+                    if not self.highlight_list.exists(highlight):
+                        log.info("Adding highlight to list: " + str(highlight.id))
+                        self.highlight_list.add(highlight)
+
+                        if (highlight.event is not None and
+                            highlight.event.timestamp > self.start_time):
+                            command_queue.enqueue(PostHighlight(highlight))

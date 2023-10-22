@@ -64,7 +64,7 @@ class Event:
     The base event class.
     """
 
-    null_post = None
+    null_post : Optional[Any] = None
 
     def __init__(self, data : Any):
         self.event_id         : int           = int(data["about"]["eventId"])
