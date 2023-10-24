@@ -147,8 +147,8 @@ class Tweeter(Outputter):
                     try:
                         status   = self.client.create_tweet(text=text, media_ids=[video_id])
                         tweet_id = int(status.data['id'])
-                    except tweepy.TweepyException as e:
-                        log.error("error - could not send tweet: " + str(e))
+                    except tweepy.TweepyException:
+                        log.error("error - could not send tweet")
                     except requests.exceptions.ConnectionError:
                         log.error("error - connection error occurred while tweeting.")
                 else:

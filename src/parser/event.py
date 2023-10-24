@@ -36,14 +36,14 @@ class EventParser(Parser):
         """
         self.get_data()
         if self.data:
-            expected_id : Optional[int] = self.get_event_id()
-            if expected_id is not None:
+            event_id : Optional[int] = self.get_event_id()
+            if event_id is not None:
                 all_plays : Any = self.data["liveData"]["plays"]["allPlays"]
-                for id, play in enumerate(all_plays):
+                for index, play in enumerate(all_plays):
                     event_type : str = play["result"]["event"]
                     if event_type != "Goal":
                         continue
-                    if int(id) == int(expected_id):
+                    if int(index) == int(event_id):
                         if event_type == "Goal":
                             event = Event(play)
                             return event

@@ -36,11 +36,14 @@ class GameStateParser(Parser):
                         is_end = True
                     elif event == "Game Official":
                         is_official = True
+
         if is_official:
             return GameState.OFFICIAL
-        elif is_end:
+
+        if is_end:
             return GameState.END
-        elif is_live:
+
+        if is_live:
             return GameState.LIVE
-        else:
-            return GameState.SCHEDULED
+
+        return GameState.SCHEDULED
