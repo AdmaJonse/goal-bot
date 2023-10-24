@@ -23,12 +23,12 @@ class HighlightList:
             self.highlights[highlight.id] = highlight
 
 
-    def exists(self, highlight_id : int) -> bool:
+    def exists(self, highlight : Highlight) -> bool:
         """
         Return a boolean indicating whether or not this highlight ID exists in the list of
         processed highlights.
         """
-        return highlight_id in self.highlights
+        return highlight.id in self.highlights
 
 
     def get(self, highlight_id : int) -> Optional[Highlight]:

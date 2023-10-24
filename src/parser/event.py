@@ -24,8 +24,8 @@ class EventParser(Parser):
         event_id      : Optional[int] = None
         scoring_plays : Any = self.data["liveData"]["plays"]["scoringPlays"]
         # Plays are zero indexed, so the first goal of the game has ID = 0
-        goal_id : str = str(int(self.goal_id - 1))
-        if goal_id in scoring_plays:
+        goal_id : int = int(self.goal_id - 1)
+        if goal_id < len(scoring_plays):
             event_id = scoring_plays[goal_id]
         return event_id
 
@@ -36,16 +36,16 @@ class EventParser(Parser):
         """
         self.get_data()
         if self.data:
-            expected_id : Optional[int] = self.get_event_id()
-            if expected_id is not None:
+            event_id : Optional[int] = self.get_event_id()
+            if event_id is not None:
                 all_plays : Any = self.data["liveData"]["plays"]["allPlays"]
-                for play in all_plays:
+                for index, play in enumerate(all_plays):
                     event_type : str = play["result"]["event"]
-                    event_id   : int = int(play["about"]["eventId"])
                     if event_type != "Goal":
                         continue
-                    if event_id == expected_id:
+                    if int(index) == int(event_id):
                         if event_type == "Goal":
-                            return Event(play)
+                            event = Event(play)
+                            return event
                         return None
         return None
