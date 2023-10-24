@@ -29,7 +29,7 @@ class Highlight:
         self.event     : Optional[Event]    = None
         self.goal_id   : int = int(data["homeScore"]) + int(data["awayScore"])
 
-        self._video = VIDEO_URL + str(self.id)
+        self.video = VIDEO_URL + str(self.id)
 
         self.game_data : Optional[GameData] = GameDataParser(self.game_id).parse()
         if self.game_data:

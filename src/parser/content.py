@@ -33,14 +33,16 @@ class ContentParser(Parser):
 
         self.get_data()
 
-        for data in self.data["summary"]["scoring"]:
-            for goal in data["goals"]:
-                if "highlightClip" in goal:
-                    highlight : Highlight = Highlight(self.game_id, goal)
-                    if not self.highlight_list.exists(highlight):
-                        log.info("Adding highlight to list: " + str(highlight.id))
-                        self.highlight_list.add(highlight)
+        if "summary" in self.data:
+            if "scoring" in self.data["summary"]:
+                for data in self.data["summary"]["scoring"]:
+                    for goal in data["goals"]:
+                        if "highlightClip" in goal:
+                            highlight : Highlight = Highlight(self.game_id, goal)
+                            if not self.highlight_list.exists(highlight):
+                                log.info("Adding highlight to list: " + str(highlight.id))
+                                self.highlight_list.add(highlight)
 
-                        if (highlight.event is not None and
-                            highlight.event.timestamp > self.start_time):
-                            command_queue.enqueue(PostHighlight(highlight))
+                                if (highlight.event is not None and
+                                    highlight.event.timestamp > self.start_time):
+                                    command_queue.enqueue(PostHighlight(highlight))

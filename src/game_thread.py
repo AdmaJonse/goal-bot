@@ -8,6 +8,7 @@ from typing import Optional
 import pause
 
 from src.data.game_data import GameData
+from src.data.game_state import GameState
 from src.parser.content import ContentParser
 from src.parser.game_data import GameDataParser
 from src.parser.game_state import GameStateParser
@@ -35,8 +36,8 @@ class GameThread(Thread):
         """
         Return a boolean indicating whether or not the game is over.
         """
-        state     : str = GameStateParser(self.game_id).parse()
-        game_over : bool = state.lower().strip() == "official"
+        state     : GameState = GameStateParser(self.game_id).parse()
+        game_over : bool = state == GameState.OFFICIAL
         return game_over
 
 
@@ -54,11 +55,10 @@ class GameThread(Thread):
             log.info("Game " + str(self.game_id) + ": The game is over.")
 
             # Continue checking for events for another 30 minutes after the game has ended
-            end_time     : datetime = datetime.now() + timedelta(minutes = 30)
-            current_time : datetime = datetime.now()
+            end_time : datetime = datetime.now() + timedelta(minutes = 30)
             log.info("Game " + str(self.game_id) + ": Continuing to parse until " + str(end_time))
 
-            while current_time < end_time:
+            while datetime.now() < end_time:
                 self.parser.parse()
                 pause.seconds(5)
             log.info("Game " + str(self.game_id) + ": Parsing complete.")
