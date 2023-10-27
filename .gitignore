@@ -6,3 +6,4 @@ data.json
 .pytest_cache
 results.xml
 .vscode
+*.mp4
