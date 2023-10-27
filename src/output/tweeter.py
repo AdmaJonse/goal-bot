@@ -72,8 +72,8 @@ class Tweeter(Outputter):
             try:
                 status   = self.client.create_tweet(text=text)
                 tweet_id = int(status.data['id'])
-            except tweepy.TweepyException:
-                log.error("error - could not send tweet")
+            except tweepy.TweepyException as err:
+                log.error("error - could not send tweet: " + str(err))
             except requests.exceptions.ConnectionError:
                 log.error("error - connection error occurred while tweeting.")
 
@@ -98,8 +98,8 @@ class Tweeter(Outputter):
                 try:
                     status   = self.client.create_tweet(text=text, in_reply_to_tweet_id=parent)
                     reply_id = int(status.data['id'])
-                except tweepy.TweepyException:
-                    log.error("error - could not send reply")
+                except tweepy.TweepyException as err:
+                    log.error("error - could not send reply: " + str(err))
                 except requests.exceptions.ConnectionError:
                     log.error("error - connection error occurred while replying.")
 
@@ -116,7 +116,7 @@ class Tweeter(Outputter):
         Download the .mp4 from the given URL, perform a media upload, clean up and then
         return the media ID string.
         """
-        filename : str = "highlight.mp4"
+        filename : str = "highlight" + url[-8:-3] + ".mp4"
         with youtube_dl.YoutubeDL({"outtmpl": filename}) as ydl:
             ydl.download([url])
 
@@ -147,8 +147,8 @@ class Tweeter(Outputter):
                     try:
                         status   = self.client.create_tweet(text=text, media_ids=[video_id])
                         tweet_id = int(status.data['id'])
-                    except tweepy.TweepyException:
-                        log.error("error - could not send tweet")
+                    except tweepy.TweepyException as err:
+                        log.error("error - could not send tweet: " + str(err))
                     except requests.exceptions.ConnectionError:
                         log.error("error - connection error occurred while tweeting.")
                 else:
@@ -182,8 +182,8 @@ class Tweeter(Outputter):
                                                                 in_reply_to_tweet_id=parent,
                                                                 media_ids=[video_id])
                             reply_id = int(status.data['id'])
-                        except tweepy.TweepyException:
-                            log.error("error - could not send tweet")
+                        except tweepy.TweepyException as err:
+                            log.error("error - could not send reply: " + str(err))
                         except requests.exceptions.ConnectionError:
                             log.error("error - connection error occurred while tweeting.")
                     else:
