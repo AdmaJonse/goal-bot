@@ -25,10 +25,10 @@ USERNAME = "nhl_goal_bot"
 
 
 def is_data_valid(response) -> bool:
-        """
-        Check the given Twitter API response to determine whether or not valid response data exists.
-        """
-        return hasattr(response, "data") and response.data is not None
+    """
+    Check the given Twitter API response to determine whether or not valid response data exists.
+    """
+    return hasattr(response, "data") and response.data is not None
 
 
 @dataclass
