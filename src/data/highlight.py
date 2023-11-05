@@ -45,6 +45,30 @@ class Highlight:
         return "Highlight: "  + str(self.id)
 
 
+    def get_footer(self) -> Optional[str]:
+        """
+        Return the score string only for a goal event. We use this as an identifier for searching
+        previous tweets of this goal.
+        """
+
+        if self.event is None:
+            log.error("Could not find corresponding event.")
+            return None
+
+        if self.game_data is None:
+            log.error("There is no game data for this game.")
+            return None
+
+        event_values = {
+            "home_team":  self.game_data.home.location,
+            "away_team":  self.game_data.away.location,
+            "home_goals": self.event.score.home_goals,
+            "away_goals": self.event.score.away_goals,
+            "hashtags":   self.game_data.hashtags
+        }
+        return templates.GOAL_FOOTER_TEMPLATE.format(**event_values)
+
+
     def get_post(self) -> Optional[str]:
         """
         Return the event string for a goal event.

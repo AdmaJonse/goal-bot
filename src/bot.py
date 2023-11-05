@@ -12,6 +12,7 @@ from src.command.command_queue import command_queue
 from src.command.check_game_status import CheckGameStatus
 from src.game_thread import GameThread
 from src.logger import log
+from src.output import output
 from src.thread_list import ThreadList
 
 threads : ThreadList = ThreadList()
@@ -69,6 +70,7 @@ def check_for_updates():
 
             # Stop checking the status of games
             threads.clear()
+            output.clear_posts()
             status_thread.join()
             log.info("All games are finished for the day. Pausing until tomorrow.")
 

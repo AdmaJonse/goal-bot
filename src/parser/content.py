@@ -52,6 +52,5 @@ class ContentParser(Parser):
                     log.info("Adding highlight to list: " + str(highlight.id))
                     self.highlight_list.add(highlight)
 
-                    if (highlight.event is not None and
-                        highlight.event.timestamp > self.start_time):
+                    if highlight.event is not None:
                         command_queue.enqueue(PostHighlight(highlight))

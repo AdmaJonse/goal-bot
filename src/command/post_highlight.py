@@ -22,6 +22,9 @@ class PostHighlight(Command):
         """
         Execute the command.
         """
-        text : Optional[str] = self.highlight.get_post()
-        if text is not None:
+        text   : Optional[str] = self.highlight.get_post()
+        footer : Optional[str] = self.highlight.get_footer()
+        if (text is not None and
+            footer is not None and
+            not output.has_posted_today(footer.strip())):
             output.post_with_media(text, self.highlight.video)

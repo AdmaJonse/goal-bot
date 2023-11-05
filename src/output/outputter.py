@@ -40,3 +40,9 @@ class Outputter(ABC):
         """
         Return a boolean indicating whether or not we've posted today.
         """
+
+    @abstractmethod
+    def clear_posts(self) -> None:
+        """
+        Clear the list of today's posts.
+        """
