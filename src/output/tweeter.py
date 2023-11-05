@@ -3,6 +3,7 @@ This module provides an interface to Twitter than can be used to
     authenticate, tweet and reply.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 import os
@@ -22,13 +23,21 @@ MAX_LENGTH = 240 # characters
 # The username of this bot's Twitter account
 USERNAME = "nhl_goal_bot"
 
-class Tweeter(Outputter):
+@dataclass
+class Authentication:
     """
-    This class provides an interface to Twitter than can be used to
-        authenticate, tweet and reply.
+    This data class is used to store keys, tokens and secrets used in authentication with the
+    Twitter API.
     """
 
-    def read_config(self):
+    bearer_token        : str = ""
+    consumer_key        : str = ""
+    consumer_secret     : str = ""
+    access_token        : str = ""
+    access_token_secret : str = ""
+    auth                : Optional[tweepy.OAuth1UserHandler] = None
+
+    def __init__(self):
         """
         Read authentication details from the .env file.
         """
@@ -40,30 +49,41 @@ class Tweeter(Outputter):
         load_dotenv(dotenv_file)
 
         # read the authentication keys
-        self.bearer_token        : str = os.getenv("BEARER_TOKEN")
-        self.consumer_key        : str = os.getenv("CONSUMER_KEY")
-        self.consumer_secret     : str = os.getenv("CONSUMER_SECRET")
-        self.access_token        : str = os.getenv("ACCESS_TOKEN")
-        self.access_token_secret : str = os.getenv("ACCESS_TOKEN_SECRET")
+        self.bearer_token        = os.getenv("BEARER_TOKEN")
+        self.consumer_key        = os.getenv("CONSUMER_KEY")
+        self.consumer_secret     = os.getenv("CONSUMER_SECRET")
+        self.access_token        = os.getenv("ACCESS_TOKEN")
+        self.access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
+        self.auth = tweepy.OAuth1UserHandler(self.consumer_key,
+                                             self.consumer_secret,
+                                             self.access_token,
+                                             self.access_token_secret)
+
+
+class Tweeter(Outputter):
+    """
+    This class provides an interface to Twitter than can be used to
+        authenticate, tweet and reply.
+    """
+    user_id : int       = 0
+    posts   : List[str] = []
 
     def __init__(self):
-        self.read_config()
-        self.client : tweepy.Client = tweepy.Client(self.bearer_token,
-                                                    self.consumer_key,
-                                                    self.consumer_secret,
-                                                    self.access_token,
-                                                    self.access_token_secret)
+        self.config : Authentication = Authentication()
+        self.api    : tweepy.API     = tweepy.API(self.config.auth)
+        self.client : tweepy.Client  = tweepy.Client(self.config.bearer_token,
+                                                     self.config.consumer_key,
+                                                     self.config.consumer_secret,
+                                                     self.config.access_token,
+                                                     self.config.access_token_secret)
 
-        auth : tweepy.OAuth1UserHandler = tweepy.OAuth1UserHandler(self.consumer_key,
-                                                                   self.consumer_secret,
-                                                                   self.access_token,
-                                                                   self.access_token_secret)
-        self.api : tweepy.API = tweepy.API(auth)
-
+        # Get the account's user ID
         user = self.client.get_user(username=USERNAME)
-        self.user_id : int = user.data.get("id", 0)
+        if hasattr(user, "data"):
+            self.user_id : int = user.data.get("id", 0)
 
+        # Get any posts made my the account so far today
         self.posts = self.get_today_posts()
 
 
@@ -81,6 +101,7 @@ class Tweeter(Outputter):
             try:
                 status   = self.client.create_tweet(text=text)
                 tweet_id = int(status.data['id'])
+                self.add_post(text)
             except tweepy.TweepyException as err:
                 log.error("error - could not send tweet: " + str(err))
             except requests.exceptions.ConnectionError:
@@ -107,6 +128,7 @@ class Tweeter(Outputter):
                 try:
                     status   = self.client.create_tweet(text=text, in_reply_to_tweet_id=parent)
                     reply_id = int(status.data['id'])
+                    self.add_post(text)
                 except tweepy.TweepyException as err:
                     log.error("error - could not send reply: " + str(err))
                 except requests.exceptions.ConnectionError:
@@ -131,7 +153,6 @@ class Tweeter(Outputter):
 
         log.info("Performing media upload of " + filename)
         media = self.api.media_upload(filename, media_category="tweet_video")
-        print(str(media))
 
         log.info("Deleting " + filename)
         os.remove(filename)
@@ -156,6 +177,7 @@ class Tweeter(Outputter):
                     try:
                         status   = self.client.create_tweet(text=text, media_ids=[video_id])
                         tweet_id = int(status.data['id'])
+                        self.add_post(text)
                     except tweepy.TweepyException as err:
                         log.error("error - could not send tweet: " + str(err))
                     except requests.exceptions.ConnectionError:
@@ -191,6 +213,7 @@ class Tweeter(Outputter):
                                                                 in_reply_to_tweet_id=parent,
                                                                 media_ids=[video_id])
                             reply_id = int(status.data['id'])
+                            self.add_post(text)
                         except tweepy.TweepyException as err:
                             log.error("error - could not send reply: " + str(err))
                         except requests.exceptions.ConnectionError:
@@ -229,7 +252,9 @@ class Tweeter(Outputter):
         provided, return only tweets that include the query as a substring.
         """
         today : datetime = schedule.get_current_date()
-        posts  = self.client.get_users_tweets(id = self.user_id, max_results = 75, start_time = today)
+        posts = self.client.get_users_tweets(id = self.user_id,
+                                             max_results = 75,
+                                             start_time = today)
         result = []
         if hasattr(posts, "data"):
             for post in posts.data:

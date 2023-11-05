@@ -50,6 +50,15 @@ class Highlight:
         Return the score string only for a goal event. We use this as an identifier for searching
         previous tweets of this goal.
         """
+
+        if self.event is None:
+            log.error("Could not find corresponding event.")
+            return None
+
+        if self.game_data is None:
+            log.error("There is no game data for this game.")
+            return None
+
         event_values = {
             "home_team":  self.game_data.home.location,
             "away_team":  self.game_data.away.location,
