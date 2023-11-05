@@ -260,9 +260,15 @@ class Tweeter(Outputter):
         provided, return only tweets that include the query as a substring.
         """
         today : datetime = schedule.get_current_date()
-        posts = self.client.get_users_tweets(id = self.user_id,
-                                             max_results = 75,
-                                             start_time = today)
+        try:
+            posts = self.client.get_users_tweets(id = self.user_id,
+                                                 max_results = 75,
+                                                 start_time = today)
+        except tweepy.TweepyException as err:
+            log.error("error - could not user tweets: " + str(err))
+        except requests.exceptions.ConnectionError:
+            log.error("error - connection error occurred while retrieving tweets.")
+
         result = []
         if is_data_valid(posts):
             for post in posts.data:
