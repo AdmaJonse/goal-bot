@@ -3,21 +3,24 @@ This module provides an interface to Twitter than can be used to
     authenticate, tweet and reply.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional
 import os
 from os.path import join, dirname, abspath
 from dotenv import load_dotenv
 import tweepy
-import pytz
 import requests
 import youtube_dl
 
+from src import schedule
 from src.logger import log
 from src.output.outputter import Outputter
 
 # maximum tweet length
 MAX_LENGTH = 240 # characters
+
+# The username of this bot's Twitter account
+USERNAME = "nhl_goal_bot"
 
 class Tweeter(Outputter):
     """
@@ -43,6 +46,7 @@ class Tweeter(Outputter):
         self.access_token        : str = os.getenv("ACCESS_TOKEN")
         self.access_token_secret : str = os.getenv("ACCESS_TOKEN_SECRET")
 
+
     def __init__(self):
         self.read_config()
         self.client : tweepy.Client = tweepy.Client(self.bearer_token,
@@ -56,6 +60,11 @@ class Tweeter(Outputter):
                                                                    self.access_token,
                                                                    self.access_token_secret)
         self.api : tweepy.API = tweepy.API(auth)
+
+        user = self.client.get_user(username=USERNAME)
+        self.user_id : int = user.data.get("id", 0)
+
+        self.posts = self.get_today_posts()
 
 
     def post(self, text : str) -> Optional[int]:
@@ -200,26 +209,39 @@ class Tweeter(Outputter):
         return reply_id
 
 
-    def get_today_posts(self, query : str = "") -> List[tweepy.Tweet]:
+    def add_post(self, text : str):
+        """
+        Add the given post to our list of posts.
+        """
+        self.posts.append(text)
+
+
+    def clear_posts(self):
+        """
+        Clear the list of posts.
+        """
+        self.posts = []
+
+
+    def get_today_posts(self) -> List[str]:
         """
         Return a list of tweets that were created today. If a query is
         provided, return only tweets that include the query as a substring.
         """
-        all_tweets   : List[tweepy.Tweet] = self.api.user_timeline(count=50, exclude_replies=True)
-        today_tweets : List[tweepy.Tweet] = []
-        period       : timedelta          = timedelta(hours=23, minutes=59)
-
-        for tweet in all_tweets:
-            if ((datetime.now(pytz.utc) - tweet.created_at) < period and
-                query in tweet.text):
-                today_tweets.append(tweet)
-
-        return today_tweets
+        today : datetime = schedule.get_current_date()
+        posts  = self.client.get_users_tweets(id = self.user_id, max_results = 75, start_time = today)
+        result = []
+        if hasattr(posts, "data"):
+            for post in posts.data:
+                result.append(post.text)
+        return result
 
 
     def has_posted_today(self, query : str = "") -> bool:
         """
         Return a boolean indicating whether or not a tweet has been sent today.
         """
-        tweets = self.get_today_posts(query)
-        return len(tweets) > 0
+        for post in self.posts:
+            if query in post:
+                return True
+        return False

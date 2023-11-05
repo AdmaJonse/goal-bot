@@ -58,3 +58,9 @@ class Printer(Outputter):
         Return a boolean indicating whether or not we've posted today.
         """
         return True
+
+
+    def clear_posts(self):
+        """
+        Clear the list of today's posts.
+        """

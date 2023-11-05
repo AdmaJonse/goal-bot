@@ -88,3 +88,10 @@ def has_posted_today(query: str = "") -> bool:
     Return a boolean indicating whether or not we've posted today.
     """
     return output.outputter.has_posted_today(query)
+
+
+def clear_posts() -> None:
+    """
+    Clear the list of today's posts.
+    """
+    output.outputter.clear_posts()
