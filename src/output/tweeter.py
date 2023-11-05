@@ -23,6 +23,14 @@ MAX_LENGTH = 240 # characters
 # The username of this bot's Twitter account
 USERNAME = "nhl_goal_bot"
 
+
+def is_data_valid(response) -> bool:
+    """
+    Check the given Twitter API response to determine whether or not valid response data exists.
+    """
+    return hasattr(response, "data") and response.data is not None
+
+
 @dataclass
 class Authentication:
     """
@@ -80,7 +88,7 @@ class Tweeter(Outputter):
 
         # Get the account's user ID
         user = self.client.get_user(username=USERNAME)
-        if hasattr(user, "data"):
+        if is_data_valid(user):
             self.user_id : int = user.data.get("id", 0)
 
         # Get any posts made my the account so far today
@@ -256,7 +264,7 @@ class Tweeter(Outputter):
                                              max_results = 75,
                                              start_time = today)
         result = []
-        if hasattr(posts, "data"):
+        if is_data_valid(posts):
             for post in posts.data:
                 result.append(post.text)
         return result
