@@ -13,7 +13,7 @@ class GameDataParser(Parser):
     """
 
     def __init__(self, game_id : int):
-        super().__init__(game_id, "/feed/live")
+        super().__init__(game_id, "/play-by-play")
 
 
     def parse(self) -> Optional[GameData]:

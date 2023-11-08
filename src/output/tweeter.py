@@ -28,7 +28,7 @@ def is_data_valid(response) -> bool:
     """
     Check the given Twitter API response to determine whether or not valid response data exists.
     """
-    return hasattr(response, "data") and response.data is not None
+    return response is not None and hasattr(response, "data") and response.data is not None
 
 
 @dataclass
@@ -260,6 +260,7 @@ class Tweeter(Outputter):
         provided, return only tweets that include the query as a substring.
         """
         today : datetime = schedule.get_current_date()
+        posts = None
         try:
             posts = self.client.get_users_tweets(id = self.user_id,
                                                  max_results = 75,
@@ -270,7 +271,7 @@ class Tweeter(Outputter):
             log.error("error - connection error occurred while retrieving tweets.")
 
         result = []
-        if is_data_valid(posts):
+        if posts is not None and is_data_valid(posts):
             for post in posts.data:
                 result.append(post.text)
         return result

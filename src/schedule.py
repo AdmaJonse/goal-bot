@@ -14,7 +14,7 @@ import requests
 from src.logger import log
 
 # NHL API URL
-SCHEDULE_API : str = "https://statsapi.web.nhl.com/api/v1/schedule"
+SCHEDULE_API : str = "https://api-web.nhle.com/v1/schedule"
 
 # Date and Time formats
 NHL_TIME_FORMAT : str    = "%Y-%m-%dT%H:%M:%SZ"
@@ -83,7 +83,7 @@ def get_schedule_json() -> Any:
     """
 
     date   : datetime = get_current_date()
-    url    : str      = SCHEDULE_API + "?date=" + date_to_string(date)
+    url    : str      = SCHEDULE_API + "/" + date_to_string(date)
     params : str      = ""
 
     log.info("getting schedule JSON from: " + url)
@@ -98,7 +98,7 @@ def get_game_id() -> Optional[int]:
     try:
 
         data    : Any = get_schedule_json()
-        game_id : int = data["dates"][0]["games"][0]["gamePk"]
+        game_id : int = data["gameWeek"][0]["games"][0]["gamePk"]
 
         log.info("game id: " + str(game_id))
         return game_id
@@ -117,7 +117,7 @@ def get_start_time() -> Optional[datetime]:
     try:
 
         data       : Any      = get_schedule_json()
-        start_time : datetime = parser.parse(data["dates"][0]["games"][0]["gameDate"])
+        start_time : datetime = parser.parse(data["gameWeek"][0]["games"][0]["gameDate"])
 
         log.info("game start time: " + time_to_string(start_time))
         return start_time
@@ -138,8 +138,8 @@ def get_todays_games() -> Optional[List[int]]:
         data  : Any       = get_schedule_json()
         games : List[int] = []
 
-        for game in data["dates"][0]["games"]:
-            games.append(game["gamePk"])
+        for game in data["gameWeek"][0]["games"]:
+            games.append(game["id"])
 
         log.info("Today's games: " + str(games))
         return games

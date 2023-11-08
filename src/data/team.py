@@ -2,6 +2,8 @@
 This module defines the Team class.
 """
 
+from src.data.abbreviations import abbreviation_to_location
+
 hashtags = {
     "ANA": "#FlyTogether",
     "ARI": "#Yotes",
@@ -79,11 +81,10 @@ class Team:
     """
 
     def __init__(self, data):
-        self._location        : str = data["locationName"]
-        self._team_name       : str = data["teamName"]
-        self._abbreviation    : str = data["abbreviation"]
-        self._full_name       : str = data["name"]
-        self._timezone        : str = data["venue"]["timeZone"]["id"]
+        self._abbreviation    : str = data["abbrev"]
+        self._location        : str = abbreviation_to_location.get(self._abbreviation, "")
+        self._team_name       : str = data["name"]["default"]
+        self._full_name       : str = self._location + " " + self._team_name
         self._hashtag         : str = hashtags[self._abbreviation]
         self._playoff_hashtag : str = playoff_hashtags[self._abbreviation]
 

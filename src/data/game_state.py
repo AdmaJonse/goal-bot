@@ -8,7 +8,20 @@ class GameState(Enum):
     """
     Enumerated type capturing the possible states of a game.
     """
-    SCHEDULED = 1
-    LIVE = 2
-    END = 3
-    OFFICIAL = 4
+    FUTURE = 1
+    PREGAME = 2
+    SOFT_FINAL = 3
+    HARD_FINAL = 4
+    OFFICIAL = 5
+    LIVE = 6
+    CRITICAL = 7  # Not sure what this one means
+
+game_state_lookup = {
+    "FUT": GameState.FUTURE,
+    "PRE": GameState.PREGAME,
+    "OVER": GameState.SOFT_FINAL,
+    "FINAL": GameState.HARD_FINAL,
+    "OFF": GameState.OFFICIAL,
+    "LIVE": GameState.LIVE,
+    "CRIT": GameState.CRITICAL
+}

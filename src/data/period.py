@@ -2,9 +2,9 @@
 This module defines the Period class.
 """
 
-REGULATION = "REGULAR"
-OVERTIME = "OVERTIME"
-SHOOTOUT = "SHOOTOUT"
+REGULATION = "REG"
+OVERTIME = "OT"
+SHOOTOUT = "SHO"
 
 
 class Period:
@@ -14,8 +14,8 @@ class Period:
     """
 
     def __init__(self, data):
-        self._number: int = data["period"]
-        self._period_type: str = data["periodType"]
+        self._number      : int = data["number"]
+        self._period_type : str = data["periodType"]
 
     def __eq__(self, other):
         return (isinstance(self, Period) and
