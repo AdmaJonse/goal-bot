@@ -1,5 +1,6 @@
 """
-TODO
+Templates for the tweets that are posted by this bot. These container placeholder values which will
+be replaced by actual values prior to posting.
 """
 
 GOAL_TEMPLATE = """

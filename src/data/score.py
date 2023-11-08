@@ -9,8 +9,8 @@ class Score:
     """
 
     def __init__(self, data):
-        self._home_goals  : int = data["goals"]["home"]
-        self._away_goals  : int = data["goals"]["away"]
+        self._home_goals  : int = data["homeScore"]
+        self._away_goals  : int = data["awayScore"]
 
     @property
     def home_goals(self) -> int:

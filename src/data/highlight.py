@@ -86,6 +86,10 @@ class Highlight:
             log.error("There is no game data for this game.")
             return None
 
+        if self.event.team is None:
+            log.error("There is no team for this event.")
+            return None
+
         goal_string   : str = ""
         assist_string : str = ""
         footer        : str = ""
@@ -93,10 +97,8 @@ class Highlight:
         event_values = {
             "team":             self.game_data.get_team_string(self.event.team),
             "scorer":           self.event.scorer,
-            "goalie":           self.event.goalie,
             "primary_assist":   self.event.primary_assist,
             "secondary_assist": self.event.secondary_assist,
-            "description":      self.event.description,
             "time":             self.event.time,
             "period":           self.event.period.ordinal,
             "home_team":        self.game_data.home.location,
@@ -108,9 +110,9 @@ class Highlight:
 
         if self.event.is_empty_net:
             goal_string = templates.EMPTY_NET_GOAL_TEMPLATE.format(**event_values)
-        elif self.event.strength == "PPG":
+        elif self.event.strength == "pp":
             goal_string = templates.POWER_PLAY_GOAL_TEMPLATE.format(**event_values)
-        elif self.event.strength == "SHG":
+        elif self.event.strength == "sh":
             goal_string = templates.SHORT_HANDED_GOAL_TEMPLATE.format(**event_values)
         else:
             goal_string = templates.GOAL_TEMPLATE.format(**event_values)

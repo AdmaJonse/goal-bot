@@ -11,7 +11,7 @@ import requests.structures
 
 from src.logger import log
 
-NHL_API_URL : str = "https://statsapi.web.nhl.com/api/v1/game/"
+NHL_API_URL : str = "https://api-web.nhle.com/v1/gamecenter/"
 
 class Parser(ABC):
     """
@@ -35,7 +35,9 @@ class Parser(ABC):
             request : Any = requests.get(self.url, headers=headers, params=params)
             self.data = request.json()
         except requests.exceptions.ConnectionError:
-            log.error("Error occurred while pulling data from: " + self.url)
+            log.error("Connection error occurred while pulling data from: " + self.url)
+        except requests.exceptions.JSONDecodeError:
+            log.error("Decode error occurred while pulling data from: " + self.url)
 
 
     @abstractmethod

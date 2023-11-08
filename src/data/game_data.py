@@ -18,11 +18,11 @@ class GameData:
     """
 
     def __init__(self, data):
-        self._home        : Team      = Team(data["gameData"]["teams"]["home"])
-        self._away        : Team      = Team(data["gameData"]["teams"]["away"])
-        self._date        : datetime  = parser.parse(data["gameData"]["datetime"]["dateTime"])
-        self._venue       : str       = data["gameData"]["venue"]["name"]
-        self._is_playoffs : bool      = data["gameData"]["game"]["type"] == "P"
+        self._home        : Team      = Team(data["homeTeam"])
+        self._away        : Team      = Team(data["awayTeam"])
+        self._date        : datetime  = parser.parse(data["startTimeUTC"])
+        self._venue       : str       = data.get("venue", "")
+        self._is_playoffs : bool      = data.get("gameType", 0) == 3
 
 
     def print_constants(self):
@@ -47,9 +47,9 @@ class GameData:
         """
         Return the name of the team from this event as a location name.
         """
-        if team == self.home.full_name:
+        if team == self.home.location:
             team_string = self.home.location
-        elif team == self.away.full_name:
+        elif team == self.away.location:
             team_string = self.away.location
         else:
             log.error("unknown team: " + str(team))
@@ -60,9 +60,9 @@ class GameData:
         """
         Return the opposing team's location name.
         """
-        if team == self.home.full_name:
+        if team == self.home.location:
             team_string = self.away.location
-        elif team == self.away.full_name:
+        elif team == self.away.location:
             team_string = self.home.location
         else:
             log.error("unknown team: " + team)
