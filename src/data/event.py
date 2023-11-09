@@ -63,7 +63,7 @@ def is_empty_net(data) -> bool:
     """
     Return whether or not the goal was scored on an empty net from the given event.
     """
-    return data.get("goalModifier", False)
+    return data.get("goalModifier", False) == "empty-net"
 
 
 # pylint: disable=too-many-instance-attributes
