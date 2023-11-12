@@ -27,6 +27,11 @@ Empty net goal for {team}!
 Scored by {scorer} with {time} remaining in the {period} period.
 """
 
+SCORE_TEMPLATE = """
+{home_team}: {home_goals}
+{away_team}: {away_goals}
+"""
+
 GOAL_FOOTER_TEMPLATE = """
 {home_team}: {home_goals}
 {away_team}: {away_goals}

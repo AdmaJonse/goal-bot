@@ -5,6 +5,7 @@ This module handles parsing of the game's current state from JSON live feed data
 from typing import Any, Optional
 
 from src.data.event import Event
+from src.logger import log
 from src.parser.parser import Parser
 
 class EventParser(Parser):
@@ -37,4 +38,7 @@ class EventParser(Parser):
                         goal_id : int = int(goal["homeScore"]) + int(goal["awayScore"])
                         if self.goal_id == goal_id:
                             return Event(descriptor, goal)
+                else:
+                    log.error("No goals in period " + str(period) + " in game " + str(self.game_id))
+        log.error("Could not find goal " + str(self.goal_id) + " in game " + str(self.game_id))
         return None

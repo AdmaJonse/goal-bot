@@ -19,5 +19,7 @@ class GameStateParser(Parser):
         Parse the static data for this game.
         """
         self.get_data()
-        state : str = self.data["gameState"]
-        return game_state_lookup.get(state, GameState.FUTURE)
+        if self.data is not None:
+            state : str = self.data["gameState"]
+            return game_state_lookup.get(state, GameState.FUTURE)
+        return GameState.FUTURE

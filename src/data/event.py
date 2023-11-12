@@ -12,7 +12,7 @@ from src.data.period import Period
 from src.data.score import Score
 
 
-def get_primary_assist(data) -> Optional[str]:
+def get_primary_assist(data : Any) -> Optional[str]:
     """
     Get the player credited with the primary assist from the given event.
     """
@@ -23,7 +23,7 @@ def get_primary_assist(data) -> Optional[str]:
     return player
 
 
-def get_secondary_assist(data) -> Optional[str]:
+def get_secondary_assist(data : Any) -> Optional[str]:
     """
     Get the player credited with the secondary assist from the given event.
     """
@@ -34,18 +34,21 @@ def get_secondary_assist(data) -> Optional[str]:
     return player
 
 
-def get_team(data) -> Optional[str]:
+def get_team(data : Any) -> Optional[str]:
     """
     Return the location string for the team in the given event.
     """
     return abbreviation_to_location.get(data["teamAbbrev"], None)
 
 
-def get_time_remaining(data) -> str:
+def get_time_remaining(period : Period, data : Any) -> str:
     """
     Calculate the time remaining in the period from the event time and return it as a string.
     """
     period_length : datetime  = datetime.strptime("20:00", "%M:%S")
+    # TODO: This isn't going to work for playoff games
+    if period.is_overtime:
+        period_length = datetime.strptime("5:00", "%M:%S")
     current_time  : datetime  = datetime.strptime(data["timeInPeriod"], "%M:%S")
     delta         : timedelta = period_length - current_time
     minutes, seconds = divmod(delta.seconds, 60)
@@ -66,7 +69,6 @@ def is_empty_net(data) -> bool:
     return data.get("goalModifier", False) == "empty-net"
 
 
-# pylint: disable=too-many-instance-attributes
 @dataclass
 class Event:
     """
@@ -75,9 +77,10 @@ class Event:
 
     null_post : Optional[Any] = None
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, period : Any, data : Any):
         self.period           : Period        = Period(period)
-        self.time             : str           = get_time_remaining(data)
+        self.time             : str           = get_time_remaining(self.period, data)
         self.score            : Score         = Score(data)
         self.team             : Optional[str] = get_team(data)
         self.scorer           : Optional[str] = data["firstName"] + " " + data["lastName"]

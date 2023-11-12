@@ -8,10 +8,14 @@ from datetime import datetime
 from typing import List, Optional
 import os
 from os.path import join, dirname, abspath
-from dotenv import load_dotenv
+
+import time
+import urllib
 import tweepy
 import requests
 import youtube_dl
+
+from dotenv import load_dotenv
 
 from src import schedule
 from src.logger import log
@@ -29,6 +33,24 @@ def is_data_valid(response) -> bool:
     Check the given Twitter API response to determine whether or not valid response data exists.
     """
     return response is not None and hasattr(response, "data") and response.data is not None
+
+
+def download_video(url : str, filename : str) -> bool:
+    """
+    Download the .mp4 from the given URL.
+    """
+    success : bool = False
+    with youtube_dl.YoutubeDL({"outtmpl": filename, "quiet": True}) as ydl:
+        try:
+            ydl.download([url])
+            success = True
+        except urllib.error.HTTPError:
+            log.error("HTTP error occurred while attempting download.")
+        except youtube_dl.utils.ExtractorError:
+            log.error("Extractor error occurred while attempting download.")
+        except youtube_dl.utils.DownloadError:
+            log.error("Download error occurred while attempting download.")
+    return success
 
 
 @dataclass
@@ -155,16 +177,25 @@ class Tweeter(Outputter):
         Download the .mp4 from the given URL, perform a media upload, clean up and then
         return the media ID string.
         """
-        filename : str = "highlight" + url[-8:-3] + ".mp4"
-        with youtube_dl.YoutubeDL({"outtmpl": filename}) as ydl:
-            ydl.download([url])
+        filename      : str  = "highlight" + url[-8:-3] + ".mp4"
+        is_downloaded : bool = False
+        max_attempts  : int  = 5
 
-        log.info("Performing media upload of " + filename)
+        # Attempt to download until the download is successful. Give up if we exceed the maximum
+        # number of attempts.
+        log.verbose("Attempting download from url: " + url)
+        for _ in range(max_attempts):
+            is_downloaded = download_video(url, filename)
+            if is_downloaded:
+                break
+            time.sleep(2)
+
+        if not os.path.exists(filename):
+            log.error("Could not download from url: " + url)
+            return None
+
         media = self.api.media_upload(filename, media_category="tweet_video")
-
-        log.info("Deleting " + filename)
         os.remove(filename)
-        log.info("return media ID string: " + media.media_id_string)
         return media.media_id_string
 
 
@@ -274,6 +305,8 @@ class Tweeter(Outputter):
         if posts is not None and is_data_valid(posts):
             for post in posts.data:
                 result.append(post.text)
+        else:
+            log.error("Could not query today's posts.")
         return result
 
 
