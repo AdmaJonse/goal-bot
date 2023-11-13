@@ -2,6 +2,10 @@ container_registry := 124596083913.dkr.ecr.ca-central-1.amazonaws.com
 image_name         := goal-bot
 image_tag          := latest
 
+.PHONY: test
+test:
+	python -m pytest --junitxml results.xml test/
+
 .PHONY: lint
 lint:
 	python -m pylint main.py src/
@@ -9,10 +13,6 @@ lint:
 .PHONY: analyze
 analyze:
 	python -m mypy --ignore-missing-imports main.py src/
-
-.PHONY: test
-test:
-	python -m pytest test/
 
 .PHONY: build
 build:
