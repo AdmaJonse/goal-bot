@@ -64,9 +64,8 @@ class Highlight:
             "away_team":  self.game_data.away.location,
             "home_goals": self.event.score.home_goals,
             "away_goals": self.event.score.away_goals,
-            "hashtags":   self.game_data.hashtags
         }
-        return templates.GOAL_FOOTER_TEMPLATE.format(**event_values)
+        return templates.SCORE_TEMPLATE.format(**event_values)
 
 
     def get_post(self) -> Optional[str]:

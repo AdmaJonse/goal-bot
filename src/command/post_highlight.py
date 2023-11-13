@@ -35,7 +35,7 @@ class PostHighlight(Command):
             return
 
         if output.has_posted_today(footer.strip()):
-            log.error("Could not post highlight - duplicate post")
+            log.error("Could not post highlight - duplicate: " + footer.strip().replace('\n', ' '))
             return
 
         output.post_with_media(text, self.highlight.video)

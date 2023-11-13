@@ -44,7 +44,7 @@ def get_current_time() -> datetime:
     Return the current time localized using the time zone constant.
     """
     current_time : datetime = datetime.now(TIME_ZONE)
-    log.info("current time: " + time_to_string(current_time))
+    log.verbose("current time: " + time_to_string(current_time))
     return current_time
 
 
@@ -54,7 +54,7 @@ def get_current_date() -> datetime:
     """
     now          : datetime = datetime.now(TIME_ZONE)
     current_date : datetime = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    log.info("current date: " + date_to_string(current_date))
+    log.verbose("current date: " + date_to_string(current_date))
     return current_date
 
 
@@ -63,7 +63,7 @@ def get_tomorrow() -> datetime:
     Return the tomorrow's date localized using the time zone constant.
     """
     tomorrow = get_current_date() + timedelta(days=1)
-    log.info("tomorrow's date: " + date_to_string(tomorrow))
+    log.verbose("tomorrow's date: " + date_to_string(tomorrow))
     return tomorrow
 
 
@@ -76,7 +76,7 @@ def get_noon() -> datetime:
     return noon
 
 
-def get_schedule_json() -> Any:
+def get_schedule_json() -> Optional[Any]:
     """
     Return the JSON record describing the team's games that are
     scheduled today.
@@ -86,8 +86,15 @@ def get_schedule_json() -> Any:
     url    : str      = SCHEDULE_API + "/" + date_to_string(date)
     params : str      = ""
 
-    log.info("getting schedule JSON from: " + url)
-    request = requests.get(url, params)
+    log.verbose("getting schedule JSON from: " + url)
+    try:
+        request = requests.get(url, params, timeout=5)
+    except requests.exceptions.Timeout:
+        log.error("Timeout occurred while pulling schedule data from: " + url)
+        return None
+    except requests.exceptions.ConnectionError:
+        log.error("Connection error occurred while pulling schedule data from: " + url)
+        return None
     return request.json()
 
 
@@ -97,17 +104,19 @@ def get_game_id() -> Optional[int]:
     """
     try:
 
-        data    : Any = get_schedule_json()
-        game_id : int = data["gameWeek"][0]["games"][0]["gamePk"]
-
-        log.info("game id: " + str(game_id))
-        return game_id
+        data    : Optional[Any] = get_schedule_json()
+        if data is not None:
+            game_id : int = data["gameWeek"][0]["games"][0]["gamePk"]
+            log.verbose("game id: " + str(game_id))
+            return game_id
 
     except IndexError:
         return None
 
     except KeyError:
         return None
+
+    return None
 
 
 def get_start_time() -> Optional[datetime]:
@@ -116,17 +125,19 @@ def get_start_time() -> Optional[datetime]:
     """
     try:
 
-        data       : Any      = get_schedule_json()
-        start_time : datetime = parser.parse(data["gameWeek"][0]["games"][0]["gameDate"])
-
-        log.info("game start time: " + time_to_string(start_time))
-        return start_time
+        data : Optional[Any] = get_schedule_json()
+        if data is not None:
+            start_time : datetime = parser.parse(data["gameWeek"][0]["games"][0]["gameDate"])
+            log.verbose("game start time: " + time_to_string(start_time))
+            return start_time
 
     except IndexError:
         return None
 
     except KeyError:
         return None
+
+    return None
 
 
 def get_todays_games() -> Optional[List[int]]:
@@ -135,17 +146,18 @@ def get_todays_games() -> Optional[List[int]]:
     """
     try:
 
-        data  : Any       = get_schedule_json()
-        games : List[int] = []
-
-        for game in data["gameWeek"][0]["games"]:
-            games.append(game["id"])
-
-        log.info("Today's games: " + str(games))
-        return games
+        data  : Optional[Any] = get_schedule_json()
+        if data is not None:
+            games : List[int]     = []
+            for game in data["gameWeek"][0]["games"]:
+                games.append(game["id"])
+            log.verbose("Today's games: " + str(games))
+            return games
 
     except IndexError:
         return None
 
     except KeyError:
         return None
+
+    return None

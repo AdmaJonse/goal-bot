@@ -19,8 +19,9 @@ class Parser(ABC):
     """
 
     def __init__(self, game_id : int, path : str, base_url : str = NHL_API_URL):
-        self.url  : str = base_url + str(game_id) + path
-        self.data : Any = []
+        self.game_id : int = game_id
+        self.url     : str = base_url + str(game_id) + path
+        self.data    : Any = {}
         log.verbose("Parsing from: " + self.url)
 
 
@@ -32,8 +33,10 @@ class Parser(ABC):
         params  : str = ""
         headers : requests.structures.CaseInsensitiveDict = requests.utils.default_headers()
         try:
-            request : Any = requests.get(self.url, headers=headers, params=params)
+            request : Any = requests.get(self.url, headers=headers, params=params, timeout=10)
             self.data = request.json()
+        except requests.exceptions.Timeout:
+            log.error("Timeout occurred while pulling data from: " + self.url)
         except requests.exceptions.ConnectionError:
             log.error("Connection error occurred while pulling data from: " + self.url)
         except requests.exceptions.JSONDecodeError:

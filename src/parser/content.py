@@ -54,3 +54,5 @@ class ContentParser(Parser):
 
                     if highlight.event is not None:
                         command_queue.enqueue(PostHighlight(highlight))
+                    else:
+                        log.error("Highlight event is none. Could not enqueue.")
