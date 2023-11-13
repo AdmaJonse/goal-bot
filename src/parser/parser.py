@@ -21,7 +21,7 @@ class Parser(ABC):
     def __init__(self, game_id : int, path : str, base_url : str = NHL_API_URL):
         self.game_id : int = game_id
         self.url     : str = base_url + str(game_id) + path
-        self.data    : Any = []
+        self.data    : Any = {}
         log.verbose("Parsing from: " + self.url)
 
 

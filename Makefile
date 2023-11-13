@@ -10,6 +10,10 @@ lint:
 analyze:
 	python -m mypy --ignore-missing-imports main.py src/
 
+.PHONY: test
+test:
+	python -m pytest test/
+
 .PHONY: build
 build:
 	docker build . -t $(image_name)

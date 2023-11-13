@@ -20,6 +20,6 @@ class GameStateParser(Parser):
         """
         self.get_data()
         if self.data is not None:
-            state : str = self.data["gameState"]
+            state : str = self.data.get("gameState", "")
             return game_state_lookup.get(state, GameState.FUTURE)
         return GameState.FUTURE

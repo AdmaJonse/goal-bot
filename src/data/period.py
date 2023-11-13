@@ -2,9 +2,14 @@
 This module defines the Period class.
 """
 
-REGULATION = "REG"
-OVERTIME = "OT"
-SHOOTOUT = "SHO"
+from datetime import timedelta
+from typing import Any
+
+from src.data.game_type import GameType
+
+REGULATION : str = "REG"
+OVERTIME   : str = "OT"
+SHOOTOUT   : str = "SHO"
 
 
 class Period:
@@ -13,9 +18,10 @@ class Period:
     provides methods for querying these names.
     """
 
-    def __init__(self, data):
-        self._number      : int = data["number"]
-        self._period_type : str = data["periodType"]
+    def __init__(self, game_type : GameType, data : Any):
+        self._number      : int      = data.get("number", 0)
+        self._period_type : str      = data.get("periodType", "")
+        self._game_type   : GameType = game_type
 
     def __eq__(self, other):
         return (isinstance(self, Period) and
@@ -133,3 +139,18 @@ class Period:
             period_string = "SO"
 
         return period_string
+
+
+    def length(self) -> timedelta:
+        """
+        Return the length of the period in minutes and seconds.
+        """
+        if self.is_overtime:
+            if self._game_type.is_playoff():
+                return timedelta(minutes=20)
+            return timedelta(minutes=5)
+
+        if self.is_shootout:
+            return timedelta(minutes=0)
+
+        return timedelta(minutes=20)

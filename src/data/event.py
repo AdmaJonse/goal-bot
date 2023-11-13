@@ -3,7 +3,7 @@ This module contains parsing of a play-by-play event.
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from datetime import datetime, timedelta
 
@@ -12,14 +12,26 @@ from src.data.period import Period
 from src.data.score import Score
 
 
+def to_name(data : Any) -> Optional[str]:
+    """
+    Generate a full name from a dict that contains a first and last name property.
+    """
+    first_name : str           = data.get("firstName", None)
+    last_name  : str           = data.get("lastName", None)
+    full_name  : Optional[str] = None
+    if first_name is not None and last_name is not None:
+        full_name = first_name + " " + last_name
+    return full_name
+
+
 def get_primary_assist(data : Any) -> Optional[str]:
     """
     Get the player credited with the primary assist from the given event.
     """
-    player : Optional[str] = None
-    if len(data.get("assists", [])) >= 1:
-        assist = data["assists"][0]
-        player = assist["firstName"] + " " + assist["lastName"]
+    player  : Optional[str] = None
+    assists : List[Any]     = data.get("assists", [])
+    if len(assists) >= 1:
+        player = to_name(assists[0])
     return player
 
 
@@ -27,10 +39,10 @@ def get_secondary_assist(data : Any) -> Optional[str]:
     """
     Get the player credited with the secondary assist from the given event.
     """
-    player : Optional[str] = None
-    if len(data.get("assists", [])) >= 2:
-        assist = data["assists"][1]
-        player = assist["firstName"] + " " + assist["lastName"]
+    player  : Optional[str] = None
+    assists : List[Any]     = data.get("assists", [])
+    if len(assists) >= 2:
+        player = to_name(assists[1])
     return player
 
 
@@ -45,12 +57,9 @@ def get_time_remaining(period : Period, data : Any) -> str:
     """
     Calculate the time remaining in the period from the event time and return it as a string.
     """
-    period_length : datetime  = datetime.strptime("20:00", "%M:%S")
-    # TODO: This isn't going to work for playoff games
-    if period.is_overtime:
-        period_length = datetime.strptime("5:00", "%M:%S")
-    current_time  : datetime  = datetime.strptime(data["timeInPeriod"], "%M:%S")
-    delta         : timedelta = period_length - current_time
+    read_time      : datetime  = datetime.strptime(data["timeInPeriod"], "%M:%S")
+    time_in_period : timedelta = timedelta(minutes = read_time.minute, seconds = read_time.second)
+    delta          : timedelta = period.length() - time_in_period
     minutes, seconds = divmod(delta.seconds, 60)
     return f"{minutes:02}:{seconds:02}"
 
@@ -68,7 +77,7 @@ def is_empty_net(data) -> bool:
     """
     return data.get("goalModifier", False) == "empty-net"
 
-
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class Event:
     """
@@ -77,10 +86,9 @@ class Event:
 
     null_post : Optional[Any] = None
 
-    # pylint: disable=too-many-instance-attributes
-    def __init__(self, period : Any, data : Any):
-        self.period           : Period        = Period(period)
-        self.time             : str           = get_time_remaining(self.period, data)
+    def __init__(self, period : Period, data : Any):
+        self.period           : Period        = period
+        self.time             : str           = get_time_remaining(period, data)
         self.score            : Score         = Score(data)
         self.team             : Optional[str] = get_team(data)
         self.scorer           : Optional[str] = data["firstName"] + " " + data["lastName"]
