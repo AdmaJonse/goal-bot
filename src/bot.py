@@ -22,11 +22,11 @@ def wait_until_morning():
     This function will wait until the next day.
     """
     current_time : datetime = schedule.get_current_time()
-    noon         : datetime = schedule.get_noon()
-    if current_time > noon:
-        noon += timedelta(days=1)
-    log.info("Pausing until: " + schedule.time_to_string(noon))
-    pause.until(noon)
+    morning      : datetime = schedule.get_morning()
+    if current_time > morning:
+        morning += timedelta(days=1)
+    log.info("Pausing until: " + schedule.time_to_string(morning))
+    pause.until(morning)
 
 
 def check_game_status():
