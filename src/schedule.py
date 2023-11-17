@@ -67,13 +67,13 @@ def get_tomorrow() -> datetime:
     return tomorrow
 
 
-def get_noon() -> datetime:
+def get_morning() -> datetime:
     """
-    Return noon for the current date.
+    Return a set time in the morning for the current date.
     """
-    now  : datetime = datetime.now(TIME_ZONE)
-    noon : datetime = now.replace(hour=12, minute=0, second=0)
-    return noon
+    now     : datetime = datetime.now(TIME_ZONE)
+    morning : datetime = now.replace(hour=7, minute=0, second=0)
+    return morning
 
 
 def get_schedule_json() -> Optional[Any]:
