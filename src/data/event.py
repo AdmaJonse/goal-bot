@@ -16,8 +16,8 @@ def to_name(data : Any) -> Optional[str]:
     """
     Generate a full name from a dict that contains a first and last name property.
     """
-    first_name : str           = data.get("firstName", None)
-    last_name  : str           = data.get("lastName", None)
+    first_name : str           = data.get("firstName", {}).get("default")
+    last_name  : str           = data.get("lastName", {}).get("default")
     full_name  : Optional[str] = None
     if first_name is not None and last_name is not None:
         full_name = first_name + " " + last_name
@@ -50,7 +50,11 @@ def get_team(data : Any) -> Optional[str]:
     """
     Return the location string for the team in the given event.
     """
-    return abbreviation_to_location.get(data["teamAbbrev"], None)
+    if data and "teamAbbrev" in data:
+        abbreviation : Optional[str] = data.get("teamAbbrev", {}).get("default")
+        if abbreviation:
+            return abbreviation_to_location.get(abbreviation, None)
+    return None
 
 
 def get_time_remaining(period : Period, data : Any) -> str:
@@ -91,7 +95,7 @@ class Event:
         self.time             : str           = get_time_remaining(period, data)
         self.score            : Score         = Score(data)
         self.team             : Optional[str] = get_team(data)
-        self.scorer           : Optional[str] = data["firstName"] + " " + data["lastName"]
+        self.scorer           : Optional[str] = to_name(data)
         self.primary_assist   : Optional[str] = get_primary_assist(data)
         self.secondary_assist : Optional[str] = get_secondary_assist(data)
         self.strength         : Optional[str] = get_strength(data)

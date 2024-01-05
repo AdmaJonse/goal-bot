@@ -18,8 +18,8 @@ class TestAbbreviations(unittest.TestCase):
         """
         data : Any = {
             "playerId": 8477942,
-            "firstName": "Kevin",
-            "lastName": "Fiala",
+            "firstName": {"default": "Kevin"},
+            "lastName": {"default": "Fiala"},
             "assistToDate": 1
         }
         expected : Optional[str] = "Kevin Fiala"
@@ -34,14 +34,14 @@ class TestAbbreviations(unittest.TestCase):
             "assists": [
                 {
                     "playerId": 8477942,
-                    "firstName": "Kevin",
-                    "lastName": "Fiala",
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
                     "assistToDate": 1
                 },
                 {
                     "playerId": 8481606,
-                    "firstName": "Jordan",
-                    "lastName": "Spence",
+                    "firstName": {"default": "Jordan"},
+                    "lastName": {"default": "Spence"},
                     "assistToDate": 1
                 }
             ]
@@ -69,14 +69,14 @@ class TestAbbreviations(unittest.TestCase):
             "assists": [
                 {
                     "playerId": 8477942,
-                    "firstName": "Kevin",
-                    "lastName": "Fiala",
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
                     "assistToDate": 1
                 },
                 {
                     "playerId": 8481606,
-                    "firstName": "Jordan",
-                    "lastName": "Spence",
+                    "firstName": {"default": "Jordan"},
+                    "lastName": {"default": "Spence"},
                     "assistToDate": 1
                 }
             ]
@@ -104,8 +104,8 @@ class TestAbbreviations(unittest.TestCase):
             "assists": [
                 {
                     "playerId": 8477942,
-                    "firstName": "Kevin",
-                    "lastName": "Fiala",
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
                     "assistToDate": 1
                 }
             ]
