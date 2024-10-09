@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM python:3.13-bookworm
 
 RUN mkdir /bot
 ADD . /bot
