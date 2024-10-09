@@ -3,6 +3,7 @@ name: CI
 
 env:
   CONTAINER_NAME: goal-bot
+  PYTHON_VERSION: "3.11"
 
 jobs:
     test:
@@ -24,7 +25,7 @@ jobs:
         - name: Install Python 3
           uses: actions/setup-python@v5
           with:
-            python-version: "3.13"
+            python-version: ${{ env.PYTHON_VERSION }}
 
         - name: Install dependencies
           run: |
@@ -48,7 +49,7 @@ jobs:
         - name: Install Python 3
           uses: actions/setup-python@v5
           with:
-            python-version: "3.13"
+            python-version: ${{ env.PYTHON_VERSION }}
 
         - name: Install dependencies
           run: |
@@ -67,7 +68,7 @@ jobs:
           - name: Install Python 3
             uses: actions/setup-python@v5
             with:
-              python-version: "3.13"
+              python-version: ${{ env.PYTHON_VERSION }}
 
           - name: Install dependencies
             run: |
