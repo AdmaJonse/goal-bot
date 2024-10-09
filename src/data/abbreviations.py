@@ -4,7 +4,6 @@ This module defines constants relating to team abbreviations.
 
 abbreviation_to_location = {
     "ANA": "Anaheim",
-    "ARI": "Arizona",
     "BOS": "Boston",
     "BUF": "Buffalo",
     "CGY": "Calgary",
@@ -31,6 +30,7 @@ abbreviation_to_location = {
     "STL": "St. Louis",
     "TBL": "Tampa Bay",
     "TOR": "Toronto",
+    "UTA": "Utah",
     "VAN": "Vancouver",
     "VGK": "Vegas",
     "WSH": "Washington",
@@ -39,7 +39,6 @@ abbreviation_to_location = {
 
 location_to_abbreviation = {
     "Anaheim":      "ANA",
-    "Arizona":      "ARI",
     "Boston":       "BOS",
     "Buffalo":      "BUF",
     "Calgary":      "CGY",
@@ -66,6 +65,7 @@ location_to_abbreviation = {
     "St. Louis":    "STL",
     "Tampa Bay":    "TBL",
     "Toronto":      "TOR",
+    "Utah":         "UTA",
     "Vancouver":    "VAN",
     "Vegas":        "VGK",
     "Washington":   "WSH",
