@@ -47,6 +47,7 @@ class GameData:
         """
         Return the name of the team from this event as a location name.
         """
+        team_string : str = ""
         if team == self.home.location:
             team_string = self.home.location
         elif team == self.away.location:
@@ -60,6 +61,7 @@ class GameData:
         """
         Return the opposing team's location name.
         """
+        team_string : str = ""
         if team == self.home.location:
             team_string = self.away.location
         elif team == self.away.location:
