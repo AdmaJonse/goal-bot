@@ -83,7 +83,7 @@ class Team:
     def __init__(self, data):
         self._abbreviation    : str = data["abbrev"]
         self._location        : str = abbreviation_to_location.get(self._abbreviation, "")
-        self._team_name       : str = data["name"]["default"]
+        self._team_name       : str = data["commonName"]["default"]
         self._full_name       : str = self._location + " " + self._team_name
         self._hashtag         : str = hashtags[self._abbreviation]
         self._playoff_hashtag : str = playoff_hashtags[self._abbreviation]
