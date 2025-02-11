@@ -10,6 +10,12 @@ See the bot in action: [@nhl_goal_bot](https://twitter.com/nhl_goal_bot)
 > make test
 ```
 
+## How to get test coverage report
+
+```shell
+> make coverage
+```
+
 ## How to lint source files
 
 ```shell

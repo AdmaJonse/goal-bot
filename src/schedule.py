@@ -161,3 +161,9 @@ def get_todays_games() -> Optional[List[int]]:
         return None
 
     return None
+
+def utc_to_local(value : datetime) -> datetime:
+    """
+    Convert the UTC time to local time.
+    """
+    return value.astimezone(tz=TIME_ZONE)

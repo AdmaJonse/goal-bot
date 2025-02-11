@@ -7,3 +7,4 @@ data.json
 results.xml
 .vscode
 *.mp4
+.coverage

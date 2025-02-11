@@ -20,7 +20,7 @@ class GameThread(Thread):
     currently in progress.
     """
 
-    def __init__(self, game_id : int):
+    def __init__(self, game_id : int) -> None:
         self.game_id    : int                = game_id
         self.game_data  : Optional[GameData] = GameDataParser(self.game_id).parse()
         self.start_time : datetime           = datetime.now(timezone.utc)
@@ -41,7 +41,7 @@ class GameThread(Thread):
         return game_over
 
 
-    def run(self):
+    def run(self) -> None:
         """
         Continuously parse the highlights for this game while it is in progress.
         """

@@ -1,66 +1,57 @@
 """
 This is an output interface intended for dry runs. Rather than tweeting, it will
-    simply print the any tweets to the logs.
+simply print the any tweets to the logs.
 """
 
 import uuid
-from typing import Optional
+from typing import Dict, Optional
 
 from src.logger import log
 from src.output.outputter import Outputter
 
 class Printer(Outputter):
     """
-    This class provides an interface to Twitter than can be used to
-        authenticate, tweet and reply.
+    This class defines an outputter that prints to the logs.
     """
 
-    def post(self, text : str) -> Optional[int]:
+    def name(self) -> str:
+        """
+        Return the name of this outputter.
+        """
+        return "printer"
+
+    def post(self, text : str) -> Optional[Dict[str, str]]:
         """
         Print the specified text.
         """
-        tweet_id : Optional[int] = uuid.uuid1().int
-        log.info("Tweet:\n" + text)
+        tweet_id : Optional[Dict[str, str]] = { "id": str(uuid.uuid1().int) }
+        log.info("Post:\n" + text)
         return tweet_id
 
-
-    def reply(self, parent : Optional[int], text : str) -> Optional[int]:
+    def reply(self, parent : Optional[Dict[str, str]], text : str) -> Optional[Dict[str, str]]:
         """
         Print a reply to the given parent with the specified text.
         """
-        reply_id : Optional[int] = uuid.uuid1().int
-        if parent is not None and parent > 0:
-            log.info("Reply to parent " + str(parent) + ":\n" + text)
+        reply_id : Optional[Dict[str, str]] = { "id": str(uuid.uuid1().int) }
+        if parent is not None and "id" in parent:
+            log.info("Reply to parent " + parent.get("id", "") + ":\n" + text)
         return reply_id
 
-
-    def post_with_media(self, text : str, _media : str) -> Optional[int]:
+    def post_with_media(self, text : str, _media : str) -> Optional[Dict[str, str]]:
         """
         Print the specified text.
         """
-        tweet_id : Optional[int] = uuid.uuid1().int
+        tweet_id : Optional[Dict[str, str]] = { "id": str(uuid.uuid1().int) }
         log.info("Tweet:\n" + text)
         return tweet_id
 
-
-    def reply_with_media(self, parent : Optional[int], text : str, _media : str) -> Optional[int]:
+    def reply_with_media(self,
+                         parent : Optional[Dict[str, str]],
+                         text : str, _media : str) -> Optional[Dict[str, str]]:
         """
         Print a reply to the given parent with the specified text.
         """
-        reply_id : Optional[int] = uuid.uuid1().int
-        if parent is not None and parent > 0:
-            log.info("Reply to parent " + str(parent) + ":\n" + text)
+        reply_id : Optional[Dict[str, str]] = { "id": str(uuid.uuid1().int) }
+        if parent is not None and "id" in parent:
+            log.info("Reply to parent " + parent.get("id", "") + ":\n" + text)
         return reply_id
-
-
-    def has_posted_today(self, _query : str = ""):
-        """
-        Return a boolean indicating whether or not we've posted today.
-        """
-        return True
-
-
-    def clear_posts(self):
-        """
-        Clear the list of today's posts.
-        """

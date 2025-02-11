@@ -10,7 +10,7 @@ class ThreadList:
     This class defines the list of game threads.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.threads : List[GameThread] = []
 
     def set(self, threads : List[GameThread]) -> None:
