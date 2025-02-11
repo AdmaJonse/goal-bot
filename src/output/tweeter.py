@@ -115,8 +115,6 @@ class Tweeter(Outputter):
             log.error("error - tweet is longer than the maximum length")
             return None
 
-        log.info("Tweet:\n" + text)
-
         try:
             status = self.client.create_tweet(text=text)
             result = { "id": status.data['id'] }
@@ -147,8 +145,6 @@ class Tweeter(Outputter):
         if len(text) > MAX_LENGTH:
             log.error("error - tweet is longer than the maximum length")
             return None
-
-        log.info("Reply to tweet " + str(parent.get("id")) + ":\n" + text)
 
         try:
             status   = self.client.create_tweet(text=text, in_reply_to_tweet_id=parent.get("id"))
@@ -190,8 +186,6 @@ class Tweeter(Outputter):
             log.error("error - tweet is longer than the maximum length")
             return None
 
-        log.info("Tweet:\n" + text)
-
         try:
             # For now we only support media uploads for video
             video_id = self.upload_video(media)
@@ -231,8 +225,6 @@ class Tweeter(Outputter):
         if len(text) > MAX_LENGTH:
             log.error("error - tweet is longer than the maximum length")
             return None
-
-        log.info("Reply to tweet " + str(parent.get("id")) + ":\n" + text)
 
         try:
             # For now we only support media uploads for video

@@ -179,7 +179,6 @@ class BlueSky(Outputter):
                     timeout=REQUEST_TIMEOUT)
 
         if response.ok:
-            log.info("Post:\n" + post["text"])
             self.add_post(post["text"])
             return {
                 "uri": response.json()["uri"],
