@@ -3,9 +3,11 @@ This module handles parsing of the JSON content data.
 """
 
 from datetime import datetime
+from typing import Optional
 
 from src.command.command_queue import command_queue
 from src.command.post_highlight import PostHighlight
+from src.command.post_reply import PostReply
 from src.data.highlight import Highlight
 from src.highlight_list import HighlightList
 from src.logger import log
@@ -25,7 +27,7 @@ class ContentParser(Parser):
         self.start_time     : datetime = start_time
 
 
-    def parse(self):
+    def parse(self) -> None:
         """
         Parse the content page for the current game to determine if there are any new
         highlights to post.
@@ -56,3 +58,8 @@ class ContentParser(Parser):
                         command_queue.enqueue(PostHighlight(highlight))
                     else:
                         log.error("Highlight event is none. Could not enqueue.")
+                else:
+                    previous : Optional[Highlight] = self.highlight_list.get(highlight.id)
+                    if previous is not None and previous.event != highlight.event:
+                        self.highlight_list.update(highlight)
+                        command_queue.enqueue(PostReply(highlight, previous))

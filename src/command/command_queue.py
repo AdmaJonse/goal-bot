@@ -23,7 +23,7 @@ class ShutdownException(Exception):
     Exception used to shutdown the command queue.
     """
 
-
+# pylint: disable=too-few-public-methods
 class Shutdown(Command):
     """
     The command used to stop the command queue.
@@ -40,7 +40,7 @@ class CommandQueue:
     The Command Queue is responsible for executing the commands that are enqueued.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.queue : List  = []
         self.state : State = State.STOPPED
 
@@ -72,7 +72,7 @@ class CommandQueue:
         return not self.queue
 
 
-    def start(self):
+    def start(self) -> None:
         """
         Start processing commands from the queue.
         """
@@ -90,7 +90,7 @@ class CommandQueue:
                     break
 
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop processing commands from the queue.
         """

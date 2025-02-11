@@ -18,11 +18,11 @@ class Logger:
     def __init__(self):
 
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter(LOG_FORMAT, TIME_FORMAT)
 
         self.stdout_handler = logging.StreamHandler(sys.stdout)
-        self.stdout_handler.setLevel(logging.INFO)
+        self.stdout_handler.setLevel(logging.DEBUG)
         self.stdout_handler.setFormatter(formatter)
 
         self.file_handler = logging.handlers.RotatingFileHandler(LOG_FILE,

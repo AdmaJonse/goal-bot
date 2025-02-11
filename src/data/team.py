@@ -36,7 +36,11 @@ hashtags = {
     "VAN": "#Canucks",
     "VGK": "#VegasBorn",
     "WSH": "#ALLCAPS",
-    "WPG": "#GoJetsGo"
+    "WPG": "#GoJetsGo",
+    "CAN": "#TeamCanada",
+    "USA": "#TeamUSA",
+    "SWE": "#TeamSweden",
+    "FIN": "#TeamFinland"
 }
 
 playoff_hashtags = {
@@ -72,6 +76,10 @@ playoff_hashtags = {
     "VGK": "",
     "WSH": "",
     "WPG": "",
+    "CAN": "",
+    "USA": "",
+    "SWE": "",
+    "FIN": ""
 }
 
 class Team:
@@ -80,10 +88,10 @@ class Team:
     provides methods for querying these names.
     """
 
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         self._abbreviation    : str = data["abbrev"]
         self._location        : str = abbreviation_to_location.get(self._abbreviation, "")
-        self._team_name       : str = data["name"]["default"]
+        self._team_name       : str = data["commonName"]["default"]
         self._full_name       : str = self._location + " " + self._team_name
         self._hashtag         : str = hashtags[self._abbreviation]
         self._playoff_hashtag : str = playoff_hashtags[self._abbreviation]

@@ -17,12 +17,13 @@ class GameData:
     course of play.
     """
 
-    def __init__(self, data):
-        self._home        : Team      = Team(data["homeTeam"])
-        self._away        : Team      = Team(data["awayTeam"])
-        self._date        : datetime  = parser.parse(data["startTimeUTC"])
-        self._venue       : str       = data.get("venue", "")
-        self._is_playoffs : bool      = data.get("gameType", 0) == 3
+    def __init__(self, data) -> None:
+        self._home            : Team      = Team(data["homeTeam"])
+        self._away            : Team      = Team(data["awayTeam"])
+        self._date            : datetime  = parser.parse(data["startTimeUTC"])
+        self._venue           : str       = data.get("venue", "")
+        self._is_playoffs     : bool      = data.get("gameType", 0) == 3
+        self._is_four_nations : bool  = data.get("gameType", 0) == 19
 
 
     def print_constants(self):
@@ -83,6 +84,8 @@ class GameData:
         if self.is_playoffs:
             hashtags.append(self.home.playoff_hashtag)
             hashtags.append(self.away.playoff_hashtag)
+        if self._is_four_nations:
+            hashtags.append("#4Nations")
         return " ".join(hashtags)
 
 
@@ -123,3 +126,10 @@ class GameData:
         Getter for the is_playoffs field.
         """
         return self._is_playoffs
+
+    @property
+    def is_four_nations(self) -> bool:
+        """
+        Getter for the is_four_nations field.
+        """
+        return self._is_four_nations

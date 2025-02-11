@@ -6,6 +6,11 @@ image_tag          := latest
 test:
 	python -m pytest --junitxml results.xml test/
 
+.PHONY: coverage
+coverage:
+	python -m coverage run --source src/ -m pytest --junitxml results.xml test/
+	python -m coverage report
+
 .PHONY: lint
 lint:
 	python -m pylint main.py src/

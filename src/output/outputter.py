@@ -3,46 +3,68 @@ This module contains the Outputter class, which is the base class for output int
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Dict, List, Optional
 
 class Outputter(ABC):
     """
     The Outputter class is the base class for output interfaces, such as the tweeter and
-        printer classes.
+    printer classes.
     """
+    posts : List[str] = []
+
+    def __init__(self):
+        self.posts = []
 
     @abstractmethod
-    def post(self, _text : str) -> Optional[int]:
+    def name(self) -> str:
         """
-        Print the specified text.
-        """
-
-    @abstractmethod
-    def reply(self, _parent : Optional[int], _text : str) -> Optional[int]:
-        """
-        Print a reply to the given parent with the specified text.
-        """
-
-    @abstractmethod
-    def post_with_media(self, _text : str, _media : str) -> Optional[int]:
-        """
-        Send a tweet with the specified text and media attachment.
+        Return the name of this outputter.
         """
 
     @abstractmethod
-    def reply_with_media(self, _parent : Optional[int], _text : str, _media : str) -> Optional[int]:
+    def post(self, _text : str) -> Optional[Dict[str, str]]:
+        """
+        Send a post with the specified text.
+        """
+
+    @abstractmethod
+    def reply(self, _parent : Optional[Dict[str, str]], _text : str) -> Optional[Dict[str, str]]:
+        """
+        Send a reply to the given parent with the specified text.
+        """
+
+    @abstractmethod
+    def post_with_media(self, _text : str, _media : str) -> Optional[Dict[str, str]]:
+        """
+        Send a post with the specified text and media attachment.
+        """
+
+    @abstractmethod
+    def reply_with_media(self,
+                         _parent : Optional[Dict[str, str]],
+                         _text : str,
+                         _media : str) -> Optional[Dict[str, str]]:
         """
         Send a reply to the given parent with the specified text and media attachment.
         """
 
-    @abstractmethod
-    def has_posted_today(self, _query : str = "") -> bool:
+    def has_posted_today(self, query : str = "") -> bool:
         """
-        Return a boolean indicating whether or not we've posted today.
+        Return a boolean indicating whether or not a tweet has been sent today.
         """
+        for post in self.posts:
+            if query in post:
+                return True
+        return False
 
-    @abstractmethod
-    def clear_posts(self) -> None:
+    def add_post(self, text : str):
         """
-        Clear the list of today's posts.
+        Add the given post to our list of posts.
         """
+        self.posts.append(text)
+
+    def clear_posts(self):
+        """
+        Clear the list of posts.
+        """
+        self.posts = []

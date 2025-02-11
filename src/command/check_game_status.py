@@ -8,6 +8,7 @@ from src.command.command import Command, Priority
 from src.command.command_queue import command_queue
 from src.game_thread import GameThread
 
+# pylint: disable=too-few-public-methods
 class CheckGameStatus(Command):
     """
     This class defines the Post Highlight command.

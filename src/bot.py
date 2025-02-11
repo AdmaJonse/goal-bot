@@ -4,7 +4,7 @@ This module handles the main logic to check for game updates.
 
 from datetime import datetime, timedelta
 from threading import Thread
-from typing import List
+from typing import List, Optional
 import pause
 
 from src import schedule
@@ -17,7 +17,7 @@ from src.thread_list import ThreadList
 
 threads : ThreadList = ThreadList()
 
-def wait_until_morning():
+def wait_until_morning() -> None:
     """
     This function will wait until the next day.
     """
@@ -29,7 +29,7 @@ def wait_until_morning():
     pause.until(morning)
 
 
-def check_game_status():
+def check_game_status() -> None:
     """
     Enqueue a parse command every five seconds.
     """
@@ -39,7 +39,7 @@ def check_game_status():
     log.info("Exiting status thread")
 
 
-def check_for_updates():
+def check_for_updates() -> None:
     """
     This function will check for a game on the current date. If a game is
     found, it will trigger game event parsing at game time. If no game is
@@ -50,7 +50,7 @@ def check_for_updates():
         log.flush()
         log.info("Checking for games today...")
 
-        games : List[int] = schedule.get_todays_games()
+        games : Optional[List[int]] = schedule.get_todays_games()
 
         # Create a thread for each of today's games
         if games:

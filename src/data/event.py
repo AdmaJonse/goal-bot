@@ -100,3 +100,43 @@ class Event:
         self.secondary_assist : Optional[str] = get_secondary_assist(data)
         self.strength         : Optional[str] = get_strength(data)
         self.is_empty_net     : bool          = is_empty_net(data)
+
+
+    def is_scorer_modified(self, previous : 'Event') -> bool:
+        """
+        Return a boolean indicating whether the scorer is different in the given goal events.
+        """
+        return self.scorer is not None and previous.scorer != self.scorer
+
+
+    def is_primary_assist_added(self, previous : 'Event') -> bool:
+        """
+        Return a boolean indicating whether a primary assist has been added between goal events.
+        """
+        return previous.primary_assist is None and self.primary_assist is not None
+
+
+    def is_secondary_assist_added(self, previous : 'Event') -> bool:
+        """
+        Return a boolean indicating whether a secondary assist has been added between goal events.
+        """
+        return previous.secondary_assist is None and self.secondary_assist is not None
+
+
+    def is_primary_assist_modified(self, previous : 'Event') -> bool:
+        """
+        Return a boolean indicating whether the primary assist has been changed between goal events.
+        """
+        return (previous.primary_assist is not None and
+                self.primary_assist is not None and
+                previous.primary_assist != self.primary_assist)
+
+
+    def is_secondary_assist_modified(self, previous : 'Event') -> bool:
+        """
+        Return a boolean indicating whether the secondary assist has been changed between goal
+        events.
+        """
+        return (previous.secondary_assist is not None and
+                self.secondary_assist is not None and
+                previous.secondary_assist != self.secondary_assist)

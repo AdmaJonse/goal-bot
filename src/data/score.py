@@ -8,7 +8,7 @@ class Score:
     functions for using this data.
     """
 
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         self._home_goals  : int = data["homeScore"]
         self._away_goals  : int = data["awayScore"]
 

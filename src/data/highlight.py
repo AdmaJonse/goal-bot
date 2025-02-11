@@ -2,7 +2,7 @@
 This module defines a highlight object.
 """
 
-from typing import Optional
+from typing import Dict, Optional
 
 from src.data.event import Event
 from src.data.game_data import GameData
@@ -21,19 +21,17 @@ class Highlight:
     This class defines a Highlight.
     """
 
-    def __init__(self, game_id, data):
-        self.id        : int = int(data["highlightClip"])
-        self.video     : str = ""
-        self.game_id   : int = game_id
-        self.game_data : Optional[GameData] = None
-        self.event     : Optional[Event]    = None
-        self.goal_id   : int = int(data["homeScore"]) + int(data["awayScore"])
+    def __init__(self, game_id, data) -> None:
+        self.id        : int                 = int(data["highlightClip"])
+        self.video     : str                 = VIDEO_URL + str(self.id)
+        self.game_id   : int                 = game_id
+        self.game_data : Optional[GameData]  = GameDataParser(self.game_id).parse()
+        self.event     : Optional[Event]     = None
+        self.goal_id   : int                 = int(data["homeScore"]) + int(data["awayScore"])
+        self.post_id   : Dict[str, Optional[Dict[str, str]]] = {}
 
-        self.video = VIDEO_URL + str(self.id)
-
-        self.game_data : Optional[GameData] = GameDataParser(self.game_id).parse()
         if self.game_data:
-            self.event : Optional[Event] = EventParser(self.game_id, self.goal_id).parse()
+            self.event = EventParser(self.game_id, self.goal_id).parse()
         else:
             log.error("Game data is null for game: " + str(game_id))
 
@@ -124,3 +122,62 @@ class Highlight:
         footer = templates.GOAL_FOOTER_TEMPLATE.format(**event_values)
 
         return goal_string + assist_string + footer
+
+
+    def get_reply(self, previous : 'Event') -> Optional[str]:
+        """
+        Return the reply string for a goal event.
+        """
+
+        # Sometimes the NHL will remove all the data from a goal event after it's been posted.
+        # When that happens, we want to avoid posting a reply so that we don't spam tweets.
+        if self.event is None or self.game_data is None or self.event.scorer is None:
+            return None
+
+        event_values = {
+            "team":             self.game_data.get_team_string(self.event.team),
+            "scorer":           self.event.scorer,
+            "primary_assist":   self.event.primary_assist,
+            "secondary_assist": self.event.secondary_assist,
+            "time":             self.event.time,
+            "period":           self.event.period.ordinal,
+            "home_team":        self.game_data.home.location,
+            "away_team":        self.game_data.away.location,
+            "home_goals":       self.event.score.home_goals,
+            "away_goals":       self.event.score.away_goals,
+            "hashtags":         self.game_data.hashtags
+        }
+
+        scorer_modified           : bool = self.event.is_scorer_modified(previous)
+        primary_assist_added      : bool = self.event.is_primary_assist_added(previous)
+        secondary_assist_added    : bool = self.event.is_secondary_assist_added(previous)
+        primary_assist_modified   : bool = self.event.is_primary_assist_modified(previous)
+        secondary_assist_modified : bool = self.event.is_secondary_assist_modified(previous)
+
+        update_text : Optional[str] = None
+
+        # Time of goal has been changed
+        if previous.time != self.event.time:
+            update_text = templates.GOAL_TIME_UPDATE_TEMPLATE.format(**event_values)
+
+        # Assists have been changed
+        if primary_assist_modified and secondary_assist_modified:
+            update_text = templates.ASSIST_UPDATE_TEMPLATE.format(**event_values)
+        elif primary_assist_modified:
+            update_text = templates.PRIMARY_ASSIST_UPDATE_TEMPLATE.format(**event_values)
+        elif secondary_assist_modified:
+            update_text = templates.SECONDARY_ASSIST_UPDATE_TEMPLATE.format(**event_values)
+
+        # Assists have been added
+        if primary_assist_added and secondary_assist_added:
+            update_text = templates.ASSIST_ADD_BOTH_TEMPLATE.format(**event_values)
+        elif primary_assist_added:
+            update_text = templates.ASSIST_ADD_PRIMARY_TEMPLATE.format(**event_values)
+        elif secondary_assist_added:
+            update_text = templates.ASSIST_ADD_SECONDARY_TEMPLATE.format(**event_values)
+
+        # Goal scorer has been changed
+        if scorer_modified:
+            update_text = templates.SCORER_UPDATE_TEMPLATE.format(**event_values)
+
+        return update_text

@@ -2,27 +2,29 @@
 This module defines the output method.
 """
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 from src.output.outputter import Outputter
 from src.output.printer import Printer
+from src.output.bluesky import BlueSky
 from src.output.tweeter import Tweeter
 
 
 class Output:
     """
     This class defines the output method to be used and any internal state of the
-        output interface.
+    output interface.
     """
 
-    def __init__(self):
-        self._dry_run   : bool = False
-        self._outputter : Outputter = Tweeter()
+    def __init__(self) -> None:
+        self._dry_run: bool = False
+        self._outputters: List[Outputter] = []
 
         if self.dry_run:
-            self._outputter = Printer()
+            self._outputters.append(Printer())
         else:
-            self._outputter = Tweeter()
+            self._outputters.append(BlueSky())
+            self._outputters.append(Tweeter())
 
     @property
     def dry_run(self) -> bool:
@@ -38,60 +40,83 @@ class Output:
         """
         self._dry_run = flag
 
-        if self.dry_run:
-            self._outputter = Printer()
-        else:
-            self._outputter = Tweeter()
-
     @property
-    def outputter(self) -> Outputter:
+    def outputters(self) -> List[Outputter]:
         """
         Return the registered outputter instance.
         """
-        return self._outputter
+        return self._outputters
 
 
 output = Output()
 
 
-def post(text: str) -> Optional[int]:
+def post(text: str) -> Dict[str, Optional[Dict[str, str]]]:
     """
-    Public function that will send a tweet with the specified text.
+    Send a post with the specified text.
     """
-    return output.outputter.post(text)
+    post_ids: Dict[str, Optional[Dict[str, str]]] = {}
+    for outputter in output.outputters:
+        post_id : Optional[Dict[str, str]] = outputter.post(text)
+        post_ids[outputter.name()] = post_id
+    return post_ids
 
 
-def reply(parent: Optional[int], text: str) -> Optional[int]:
+def reply(parents : Dict[str, Optional[Dict[str, str]]],
+          text: str) -> Dict[str, Optional[Dict[str, str]]]:
     """
-    Public function that will send a reply with the specified text to the
-    tweet with the given parent.
+    Send a post with the specified text as a reply to the given parent.
     """
-    return output.outputter.reply(parent, text)
+    post_ids: Dict[str, Optional[Dict[str, str]]] = {}
+    for outputter in output.outputters:
+        parent : Optional[Dict[str, str]] = parents.get(outputter.name())
+        if parent is not None:
+            post_id: Optional[Dict[str, str]] = outputter.reply(parent, text)
+            post_ids[outputter.name()] = post_id
+    return post_ids
 
 
-def post_with_media(text: str, media: str) -> Optional[int]:
+def post_with_media(text: str, media: str) -> Dict[str, Optional[Dict[str, str]]]:
     """
-    Send a tweet with the specified text.
+    Send a post with the specified text and media.
     """
-    return output.outputter.post_with_media(text, media)
+    post_ids : Dict[str, Optional[Dict[str, str]]] = {}
+    for outputter in output.outputters:
+        post_id : Optional[Dict[str, str]] = outputter.post_with_media(text, media)
+        post_ids[outputter.name()] = post_id
+    return post_ids
 
 
-def reply_with_media(parent: Optional[int], text: str, media: str) -> Optional[int]:
+def reply_with_media(
+    parents: Dict[str, Optional[Dict[str, str]]],
+    text: str,
+    media: str
+) -> Dict[str, Optional[Dict[str, str]]]:
     """
     Send a reply to the given parent tweet with the specified text.
     """
-    return output.outputter.reply_with_media(parent, text, media)
+    post_ids: Dict[str, Optional[Dict[str, str]]] = {}
+    for outputter in output.outputters:
+        parent: Optional[Dict[str, str]] = parents.get(outputter.name())
+        if parent is not None:
+            post_id : Optional[Dict[str, str]] = outputter.reply_with_media(parent, text, media)
+            post_ids[outputter.name()] = post_id
+    return post_ids
 
 
-def has_posted_today(query: str = "") -> bool:
+def has_posted_today(query: str = "") -> Dict[str, bool]:
     """
     Return a boolean indicating whether or not we've posted today.
     """
-    return output.outputter.has_posted_today(query)
+    has_posted: Dict[str, bool] = {}
+    for outputter in output.outputters:
+        has_posted[outputter.name()] = outputter.has_posted_today(query)
+    return has_posted
 
 
 def clear_posts() -> None:
     """
     Clear the list of today's posts.
     """
-    output.outputter.clear_posts()
+    for outputter in output.outputters:
+        outputter.clear_posts()
