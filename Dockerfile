@@ -4,6 +4,8 @@ RUN mkdir /bot
 ADD . /bot
 WORKDIR /bot
 
+RUN apk add ffmpeg
+
 RUN pip install -r requirements.txt
 
 EXPOSE 5000
