@@ -34,7 +34,8 @@ class GameType(Enum):
 
     def is_four_nations(self) -> bool:
         """
-        
+        Return a boolean indicating whether or not this is a Four Nations
+        tournament game.
         """
         return self == GameType.NATIONS
 
