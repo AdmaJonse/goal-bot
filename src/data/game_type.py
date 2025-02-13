@@ -12,6 +12,7 @@ class GameType(Enum):
     EXHIBITION = 1
     REGULAR_SEASON = 2
     PLAYOFF = 3
+    NATIONS = 19
 
     def is_exhibition(self) -> bool:
         """
@@ -31,9 +32,16 @@ class GameType(Enum):
         """
         return self == GameType.PLAYOFF
 
+    def is_four_nations(self) -> bool:
+        """
+        
+        """
+        return self == GameType.NATIONS
+
 
 game_type_lookup : Dict[int, GameType] = {
     1: GameType.EXHIBITION,
     2: GameType.REGULAR_SEASON,
-    3: GameType.PLAYOFF
+    3: GameType.PLAYOFF,
+    19: GameType.NATIONS
 }
