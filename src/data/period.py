@@ -148,6 +148,8 @@ class Period:
         if self.is_overtime:
             if self._game_type.is_playoff():
                 return timedelta(minutes=20)
+            if self._game_type.is_four_nations():
+                return timedelta(minutes=10)
             return timedelta(minutes=5)
 
         if self.is_shootout:

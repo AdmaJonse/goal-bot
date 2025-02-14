@@ -19,6 +19,8 @@ from src.logger import log
 from src.output import video
 from src.output.outputter import Outputter
 
+from src import utils
+
 # maximum tweet length
 MAX_LENGTH = 240 # characters
 
@@ -74,7 +76,7 @@ class Authentication:
 class Tweeter(Outputter):
     """
     This class provides an interface to Twitter than can be used to
-        authenticate, tweet and reply.
+    authenticate, tweet and reply.
     """
     user_id : int = 0
 
@@ -88,10 +90,10 @@ class Tweeter(Outputter):
                                                      self.config.access_token,
                                                      self.config.access_token_secret)
 
-        # # Get the account's user ID
-        # user = self.client.get_user(username=USERNAME)
-        # if is_data_valid(user):
-        #     self.user_id : int = user.data.get("id", 0)
+        # Get the account's user ID
+        user = self.client.get_user(username=USERNAME)
+        if is_data_valid(user):
+            self.user_id : int = user.data.get("id", 0)
 
         # Get any posts made my the account so far today
         self.posts = self.get_today_posts()
@@ -111,8 +113,14 @@ class Tweeter(Outputter):
 
         result : Optional[Dict[str, str]] = None
 
+        log.info("Twitter - Post: " + utils.strip_text(text))
+
         if len(text) > MAX_LENGTH:
-            log.error("error - tweet is longer than the maximum length")
+            log.error("Twitter - tweet is longer than the maximum length")
+            return None
+
+        if self.has_posted(text):
+            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -120,9 +128,9 @@ class Tweeter(Outputter):
             result = { "id": status.data['id'] }
             self.add_post(text)
         except tweepy.TweepyException as err:
-            log.error("error - could not send tweet: " + str(err))
+            log.error("Twitter - could not send tweet: " + str(err))
         except requests.exceptions.ConnectionError:
-            log.error("error - connection error occurred while tweeting.")
+            log.error("Twitter - connection error occurred while tweeting.")
 
         return result
 
@@ -134,16 +142,22 @@ class Tweeter(Outputter):
 
         result : Optional[Dict[str, str]] = None
 
+        log.info("Twitter - Reply: " + utils.strip_text(text))
+
         if parent is None:
-            log.error("error - parent post is missing")
+            log.error("Twitter - parent post is missing")
             return None
 
         if parent.get("id") is None:
-            log.error("error - parent post is missing an ID")
+            log.error("Twitter - parent post is missing an ID")
             return None
 
         if len(text) > MAX_LENGTH:
-            log.error("error - tweet is longer than the maximum length")
+            log.error("Twitter - tweet is longer than the maximum length")
+            return None
+
+        if self.has_posted(text):
+            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -151,9 +165,9 @@ class Tweeter(Outputter):
             result = { "id": status.data['id'] }
             self.add_post(text)
         except tweepy.TweepyException as err:
-            log.error("error - could not send reply: " + str(err))
+            log.error("Twitter - could not send reply: " + str(err))
         except requests.exceptions.ConnectionError:
-            log.error("error - connection error occurred while replying.")
+            log.error("Twitter - connection error occurred while replying.")
 
         return result
 
@@ -168,9 +182,10 @@ class Tweeter(Outputter):
         video.download(url, filename)
 
         if not os.path.exists(filename):
-            log.error("Could not download from url: " + url)
+            log.error("Twitter - Could not download from url: " + url)
             return None
 
+        log.verbose("Twitter - Uploading video: " + filename)
         media = self.api.media_upload(filename, media_category="tweet_video")
         video.remove(filename)
         return media.media_id_string
@@ -182,8 +197,14 @@ class Tweeter(Outputter):
         """
         result : Optional[Dict[str, str]] = None
 
+        log.info("Twitter - Post with media: " + utils.strip_text(text))
+
         if len(text) > MAX_LENGTH:
-            log.error("error - tweet is longer than the maximum length")
+            log.error("Twitter - tweet is longer than the maximum length")
+            return None
+
+        if self.has_posted(text):
+            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -195,13 +216,13 @@ class Tweeter(Outputter):
                     result = { "id": status.data['id'] }
                     self.add_post(text)
                 except tweepy.TweepyException as err:
-                    log.error("error - could not send tweet: " + str(err))
+                    log.error("Twitter - could not send tweet: " + str(err))
                 except requests.exceptions.ConnectionError:
-                    log.error("error - connection error occurred while tweeting.")
+                    log.error("Twitter - connection error occurred while tweeting.")
             else:
-                log.error("error - the video upload failed.")
+                log.error("Twitter - the video upload failed.")
         except tweepy.TweepyException as error:
-            log.error("error - could not send tweet: " + str(error))
+            log.error("Twitter - could not send tweet: " + str(error))
 
         return result
 
@@ -214,16 +235,22 @@ class Tweeter(Outputter):
         """
         result : Optional[Dict[str, str]] = None
 
+        log.info("Twitter - Reply with media: " + utils.strip_text(text))
+
         if parent is None:
-            log.error("error - parent post is missing")
+            log.error("Twitter - parent post is missing")
             return None
 
         if parent.get("id") is None:
-            log.error("error - parent post is missing an ID")
+            log.error("Twitter - parent post is missing an ID")
             return None
 
         if len(text) > MAX_LENGTH:
-            log.error("error - tweet is longer than the maximum length")
+            log.error("Twitter - tweet is longer than the maximum length")
+            return None
+
+        if self.has_posted(text):
+            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -237,14 +264,14 @@ class Tweeter(Outputter):
                     result = { "id": status.data['id'] }
                     self.add_post(text)
                 except tweepy.TweepyException as err:
-                    log.error("error - could not send reply: " + str(err))
+                    log.error("Twitter - could not send reply: " + str(err))
                 except requests.exceptions.ConnectionError:
-                    log.error("error - connection error occurred while tweeting.")
+                    log.error("Twitter - connection error occurred while tweeting.")
             else:
-                log.error("error - the video upload failed.")
+                log.error("Twitter - the video upload failed.")
 
         except tweepy.TweepyException:
-            log.error("error - could not send reply")
+            log.error("Twitter - could not send reply")
 
         return result
 
@@ -261,14 +288,14 @@ class Tweeter(Outputter):
                                                  max_results = 75,
                                                  start_time = today)
         except tweepy.TweepyException as err:
-            log.error("error - could not user tweets: " + str(err))
+            log.error("Twitter - could not user tweets: " + str(err))
         except requests.exceptions.ConnectionError:
-            log.error("error - connection error occurred while retrieving tweets.")
+            log.error("Twitter - connection error occurred while retrieving tweets.")
 
         result = []
         if posts is not None and is_data_valid(posts):
             for post in posts.data:
-                result.append(post.text)
+                result.append(utils.strip_text(post.text))
         else:
-            log.error("Could not query today's posts.")
+            log.error("Twitter - Could not query today's posts.")
         return result

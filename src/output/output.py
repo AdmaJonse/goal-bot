@@ -4,7 +4,6 @@ This module defines the output method.
 
 from typing import Dict, List, Optional
 
-from src.logger import log
 from src.output.outputter import Outputter
 from src.output.printer import Printer
 from src.output.bluesky import BlueSky
@@ -56,7 +55,6 @@ def post(text: str) -> Dict[str, Optional[Dict[str, str]]]:
     """
     Send a post with the specified text.
     """
-    log.info("Post:\n" + text)
     post_ids: Dict[str, Optional[Dict[str, str]]] = {}
     for outputter in output.outputters:
         post_id : Optional[Dict[str, str]] = outputter.post(text)
@@ -69,7 +67,6 @@ def reply(parents : Dict[str, Optional[Dict[str, str]]],
     """
     Send a post with the specified text as a reply to the given parent.
     """
-    log.info("Reply:\n" + text)
     post_ids: Dict[str, Optional[Dict[str, str]]] = {}
     for outputter in output.outputters:
         parent : Optional[Dict[str, str]] = parents.get(outputter.name())
@@ -83,7 +80,6 @@ def post_with_media(text: str, media: str) -> Dict[str, Optional[Dict[str, str]]
     """
     Send a post with the specified text and media.
     """
-    log.info("Post:\n" + text)
     post_ids : Dict[str, Optional[Dict[str, str]]] = {}
     for outputter in output.outputters:
         post_id : Optional[Dict[str, str]] = outputter.post_with_media(text, media)
@@ -99,7 +95,6 @@ def reply_with_media(
     """
     Send a reply to the given parent tweet with the specified text.
     """
-    log.info("Reply:\n" + text)
     post_ids: Dict[str, Optional[Dict[str, str]]] = {}
     for outputter in output.outputters:
         parent: Optional[Dict[str, str]] = parents.get(outputter.name())

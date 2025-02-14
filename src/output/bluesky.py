@@ -4,7 +4,6 @@ authenticate, post and reply.
 """
 
 import os
-import re
 import time
 
 from dataclasses import dataclass
@@ -23,6 +22,7 @@ from src.logger import log
 from src.output.outputter import Outputter
 from src.output import video
 from src import schedule
+from src import utils
 
 # maximum post length
 MAX_LENGTH = 240 # characters
@@ -73,17 +73,6 @@ def parse_tags(text : str) -> List:
             ]})
     return facets
 
-
-def strip_text(text : str) -> str:
-    """
-    Strip the text of any tags.
-    """
-    result  : str = ""
-    pattern : str = r"^.*\: \d{1,2}$\n^.*\: \d{1,2}$"
-    match = re.search(pattern, text, re.MULTILINE)
-    if match:
-        result = match.group(0).strip().replace('\n', ' ')
-    return result
 
 @dataclass
 class Authentication:
@@ -165,7 +154,7 @@ class BlueSky(Outputter):
         self.create_session()
 
         if self.session is None:
-            log.error("Could not create session.")
+            log.error("Bluesky - Could not create session.")
             return None
 
         response = requests.post(
@@ -193,12 +182,15 @@ class BlueSky(Outputter):
         """
         Post with the specified text.
         """
+
+        log.info("Bluesky - Post: " + utils.strip_text(text))
+
         if len(text) > MAX_LENGTH:
-            log.error("error - post is longer than the maximum length")
+            log.error("Bluesky - post is longer than the maximum length")
             return None
 
         if text in self.posts:
-            log.error("Skipping duplicate post")
+            log.error("Bluesky - Skipping duplicate post")
             return None
 
         post : dict[Any, Any] = {
@@ -216,20 +208,22 @@ class BlueSky(Outputter):
         Send a reply to the given parent post with the specified text.
         """
 
+        log.info("Bluesky - Reply: " + utils.strip_text(text))
+
         if parent is None:
-            log.error("error - parent post is missing")
+            log.error("Bluesky - parent post is missing")
             return None
 
         if len(text) > MAX_LENGTH:
-            log.error("error - post is longer than the maximum length")
+            log.error("Bluesky - post is longer than the maximum length")
             return None
 
         if text in self.posts:
-            log.error("Skipping duplicate post")
+            log.error("Bluesky - Skipping duplicate post")
             return None
 
         if "cid" not in parent or "uri" not in parent:
-            log.error("error - parent post is missing cid or uri")
+            log.error("Bluesky - parent post is missing cid or uri")
             return None
 
         post : dict[Any, Any] = {
@@ -260,17 +254,19 @@ class BlueSky(Outputter):
         filename : str  = "highlight" + url[-8:-3] + ".mp4"
         data     : Optional[bytes] = None
 
+        log.verbose("Bluesky - uploading video: " + filename)
+
         video.download(url, filename)
 
         if not os.path.exists(filename):
-            log.error("Could not download from url: " + url)
+            log.error("Bluesky - Could not download from url: " + url)
             return None
 
         video.normalize_video(filename)
         data = video.read(filename)
 
         if data is None:
-            log.error("Failed to read video file: " + filename)
+            log.error("Bluesky - Failed to read video file: " + filename)
             return None
 
         self.create_session()
@@ -286,13 +282,13 @@ class BlueSky(Outputter):
         video.remove(filename)
 
         if not response.ok:
-            log.error("Failed to upload blob: " + filename)
+            log.error("Bluesky - Failed to upload blob: " + filename)
             return None
 
         blob = response.json()["blob"]
-        log.info("Blob uploaded: " + str(blob))
+        log.verbose("Bluesky - Blob uploaded: " + str(blob))
 
-        log.info("Waiting for blob upload to complete...")
+        log.verbose("Bluesky - Waiting for blob upload to complete...")
         time.sleep(30)
 
         return blob
@@ -303,17 +299,19 @@ class BlueSky(Outputter):
         Send a post with the specified text.
         """
 
+        log.info("Bluesky - Post with media: " + utils.strip_text(text))
+
         if len(text) > MAX_LENGTH:
-            log.error("error - post is longer than the maximum length")
+            log.error("Bluesky - post is longer than the maximum length")
             return None
 
-        if strip_text(text) in self.posts:
-            log.error("Skipping duplicate post: " + strip_text(text))
+        if utils.strip_text(text) in self.posts:
+            log.error("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         blob = self.upload_video(media)
         if blob is None:
-            log.error("error - the video upload failed.")
+            log.error("Bluesky - the video upload failed.")
             return None
 
         post : dict[Any, Any] = {
@@ -339,25 +337,27 @@ class BlueSky(Outputter):
         Send a reply to the given parent post with the specified text.
         """
 
+        log.info("Bluesky - Reply with media: " + utils.strip_text(text))
+
         if parent is None:
-            log.error("error - parent post is missing")
+            log.error("Bluesky - parent post is missing")
             return None
 
         if len(text) > MAX_LENGTH:
-            log.error("error - post is longer than the maximum length")
+            log.error("Bluesky - post is longer than the maximum length")
             return None
 
-        if strip_text(text) in self.posts:
-            log.error("Skipping duplicate post: " + strip_text(text))
+        if utils.strip_text(text) in self.posts:
+            log.error("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         if "cid" not in parent or "uri" not in parent:
-            log.error("error - parent post is missing cid or uri")
+            log.error("Bluesky - parent post is missing cid or uri")
             return None
 
         blob = self.upload_video(media)
         if blob is None:
-            log.error("error - the video upload failed.")
+            log.error("Bluesky - the video upload failed.")
             return None
 
         post : dict[Any, Any] = {
@@ -390,7 +390,7 @@ class BlueSky(Outputter):
         """
         Add the given post to our list of posts.
         """
-        self.posts.append(strip_text(text))
+        self.posts.append(utils.strip_text(text))
 
 
     def clear_posts(self):
@@ -410,7 +410,7 @@ class BlueSky(Outputter):
 
         did = self.session.get("did")
         if did is None:
-            log.error("Could not retrieve today's posts.")
+            log.error("Bluesky - Could not retrieve today's posts.")
             return []
 
         feed = self.client.get_author_feed(actor=did, limit=100)
@@ -421,5 +421,5 @@ class BlueSky(Outputter):
                 post_date    = schedule.utc_to_local(utc_time).date()
                 current_date = schedule.get_current_date().date()
                 if post_date == current_date:
-                    result.append(strip_text(post.post.record.text))
+                    result.append(utils.strip_text(post.post.record.text))
         return result
