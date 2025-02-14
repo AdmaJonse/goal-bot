@@ -5,6 +5,8 @@ This module contains the Outputter class, which is the base class for output int
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
+from src import utils
+
 class Outputter(ABC):
     """
     The Outputter class is the base class for output interfaces, such as the tweeter and
@@ -57,14 +59,20 @@ class Outputter(ABC):
                 return True
         return False
 
-    def add_post(self, text : str):
+    def add_post(self, text : str) -> None:
         """
         Add the given post to our list of posts.
         """
-        self.posts.append(text)
+        self.posts.append(utils.strip_text(text))
 
-    def clear_posts(self):
+    def clear_posts(self) -> None:
         """
         Clear the list of posts.
         """
         self.posts = []
+
+    def has_posted(self, text: str) -> bool:
+        """
+        Return a boolean indicating whether or not the given text has been posted.
+        """
+        return utils.strip_text(text) in self.posts
