@@ -229,7 +229,8 @@ class Tweeter(Outputter):
 
     def reply_with_media(self,
                          parent : Optional[Dict[str, str]],
-                         text : str, media : str) -> Optional[Dict[str, str]]:
+                         text : str,
+                         media : str) -> Optional[Dict[str, str]]:
         """
         Send a reply to the given parent tweet with the specified text.
         """

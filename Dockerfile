@@ -5,6 +5,7 @@ ADD . /bot
 WORKDIR /bot
 
 RUN apk add ffmpeg
+RUN apk add libmediainfo
 
 RUN pip install -r requirements.txt
 
