@@ -146,7 +146,7 @@ class Period:
         Return the length of the period in minutes and seconds.
         """
         if self.is_overtime:
-            if self._game_type.is_playoff():
+            if self._game_type.is_playoff() or self._game_type.is_four_nations_final():
                 return timedelta(minutes=20)
             if self._game_type.is_four_nations():
                 return timedelta(minutes=10)
