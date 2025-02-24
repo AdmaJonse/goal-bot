@@ -1,5 +1,5 @@
 """
-This module provides an interface to Twitter than can be used to
+This module provides an interface to Bluesky than can be used to
 authenticate, post and reply.
 """
 
@@ -42,7 +42,10 @@ def now() -> str:
 
 def get_tag_indices(text : str) -> List[tuple[int,int]]:
     """
-    Parse the tags from the given text.
+    Bluesky doesn't just automatically parse hashtag locations,
+    so you need to parse the text of your post and find any hashtags.
+    Then you need to return the start and end indices of each
+    hashtag. This is then sent in the post request as a facet.
     """
     indices : List[tuple[int,int]] = []
     for word in text.split():
@@ -55,7 +58,8 @@ def get_tag_indices(text : str) -> List[tuple[int,int]]:
 
 def parse_tags(text : str) -> List:
     """
-    Parse the tags from the given text.
+    Find the tag indices in the text, then add facets specifying
+    the start adn end characters of each.
     """
     facets  : List = []
     indices : List[tuple[int,int]] = get_tag_indices(text)
@@ -77,8 +81,8 @@ def parse_tags(text : str) -> List:
 @dataclass
 class Authentication:
     """
-    This data class is used to store keys, tokens and secrets used in authentication with the
-    Twitter API.
+    This data class is used to store keys, tokens and secrets used in
+    authentication with the Bluesky API.
     """
 
     handle        : str = ""
@@ -248,8 +252,8 @@ class BlueSky(Outputter):
 
     def upload_video(self, url : str) -> Optional[str]:
         """
-        Download the .mp4 from the given URL, perform a media upload, clean up and then
-        return the media ID string.
+        Download the .mp4 from the given URL, perform a media upload,
+        clean up and then return the media ID string.
         """
         filename : str  = "highlight" + url[-8:-3] + ".mp4"
         data     : Optional[bytes] = None

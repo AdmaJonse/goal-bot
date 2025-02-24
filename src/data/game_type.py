@@ -12,7 +12,8 @@ class GameType(Enum):
     EXHIBITION = 1
     REGULAR_SEASON = 2
     PLAYOFF = 3
-    NATIONS = 19
+    FOUR_NATIONS = 19
+    FOUR_NATIONS_FINAL = 20
 
     def is_exhibition(self) -> bool:
         """
@@ -37,12 +38,20 @@ class GameType(Enum):
         Return a boolean indicating whether or not this is a Four Nations
         tournament game.
         """
-        return self == GameType.NATIONS
+        return self == GameType.FOUR_NATIONS or self == GameType.FOUR_NATIONS_FINAL
+
+    def is_four_nations_final(self) -> bool:
+        """
+        Return a boolean indicating whether or not this is the Four Nations
+        tournament final game.
+        """
+        return self == GameType.FOUR_NATIONS_FINAL
 
 
 game_type_lookup : Dict[int, GameType] = {
     1: GameType.EXHIBITION,
     2: GameType.REGULAR_SEASON,
     3: GameType.PLAYOFF,
-    19: GameType.NATIONS
+    19: GameType.FOUR_NATIONS,
+    20: GameType.FOUR_NATIONS_FINAL
 }

@@ -23,7 +23,7 @@ class GameData:
         self._date            : datetime  = parser.parse(data["startTimeUTC"])
         self._venue           : str       = data.get("venue", "")
         self._is_playoffs     : bool      = data.get("gameType", 0) == 3
-        self._is_four_nations : bool  = data.get("gameType", 0) == 19
+        self._is_four_nations : bool      = data.get("gameType", 0) == 19 or data.get("gameType", 0) == 20
 
 
     def print_constants(self):
