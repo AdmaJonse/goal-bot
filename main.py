@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 The main process for the NHL twitter bot application.
 """
@@ -34,4 +36,4 @@ if __name__ == '__main__':
     bot_thread.start()
 
     # Run the front-end web application
-    serve(app, host="0.0.0.0", port=5000)
+    serve(app, host="0.0.0.0", port=5000, threads=8)
