@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 The main process for the NHL twitter bot application.
 """
