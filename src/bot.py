@@ -10,6 +10,7 @@ import pause
 from src import schedule
 from src.command.command_queue import command_queue
 from src.command.check_game_status import CheckGameStatus
+from src.command.check_health import CheckHealth
 from src.game_thread import GameThread
 from src.logger import log
 from src.output import output
@@ -37,6 +38,17 @@ def check_game_status() -> None:
         command_queue.enqueue(CheckGameStatus(threads.get()))
         pause.seconds(30)
     log.info("Exiting status thread")
+
+
+def check_health() -> bool:
+    """
+    Check the health of the application by enqueueing a command and
+    ensuring that it is processed in a reasonable amount of time.
+    """
+    health_check = CheckHealth()
+    command_queue.enqueue(health_check)
+    result = health_check.event.wait(1)
+    return result
 
 
 def check_for_updates() -> None:

@@ -32,7 +32,7 @@ class PostReply(Command):
             return
 
         if self.previous.event is None:
-            log.error("Could find event for highlight: " + str(self.previous))
+            log.error("Could not find event for highlight: " + str(self.previous))
             return
 
         text : Optional[str] = self.updated.get_reply(self.previous.event)
