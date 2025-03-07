@@ -5,6 +5,7 @@ The main process for the NHL twitter bot application.
 import threading
 import logging
 import signal
+import sys
 
 from os import path
 from flask import Flask
@@ -39,12 +40,12 @@ def health():
         return "Health check failed", 503
     return "Healthy", 200
 
-def shutdown(signum, frame):
+def shutdown(_signum, _frame):
     """
     Shutdown the bot and the web application.
     """
     logger.log.info("Shutting down...")
-    exit(0)
+    sys.exit(0)
 
 signal.signal(signal.SIGTERM, shutdown)
 
