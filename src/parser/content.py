@@ -61,5 +61,6 @@ class ContentParser(Parser):
                 else:
                     previous : Optional[Highlight] = self.highlight_list.get(highlight.id)
                     if previous is not None and previous.event != highlight.event:
+                        log.info("Updating existing highlight: " + str(highlight.id))
                         self.highlight_list.update(highlight)
                         command_queue.enqueue(PostReply(highlight, previous))
