@@ -7,7 +7,6 @@ from typing import Dict, List, Optional
 from src.output.outputter import Outputter
 from src.output.printer import Printer
 from src.output.bluesky import BlueSky
-from src.output.tweeter import Tweeter
 
 
 class Output:
@@ -24,7 +23,6 @@ class Output:
             self._outputters.append(Printer())
         else:
             self._outputters.append(BlueSky())
-            self._outputters.append(Tweeter())
 
     @property
     def dry_run(self) -> bool:
