@@ -194,7 +194,7 @@ class BlueSky(Outputter):
             return None
 
         if text in self.posts:
-            log.error("Bluesky - Skipping duplicate post")
+            log.warning("Bluesky - Skipping duplicate post")
             return None
 
         post : dict[Any, Any] = {
@@ -223,7 +223,7 @@ class BlueSky(Outputter):
             return None
 
         if text in self.posts:
-            log.error("Bluesky - Skipping duplicate post")
+            log.warning("Bluesky - Skipping duplicate post")
             return None
 
         if "cid" not in parent or "uri" not in parent:
@@ -310,7 +310,7 @@ class BlueSky(Outputter):
             return None
 
         if utils.strip_text(text) in self.posts:
-            log.error("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         blob = self.upload_video(media)
@@ -352,7 +352,7 @@ class BlueSky(Outputter):
             return None
 
         if utils.strip_text(text) in self.posts:
-            log.error("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         if "cid" not in parent or "uri" not in parent:

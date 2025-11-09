@@ -49,6 +49,13 @@ class Logger:
         self.logger.error(msg)
 
 
+    def warning(self, msg):
+        """
+        Log the given message at the warning level.
+        """
+        self.logger.warning(msg)
+
+
     def verbose(self, msg):
         """
         Log the given message at the debug level.
