@@ -120,7 +120,7 @@ class Tweeter(Outputter):
             return None
 
         if self.has_posted(text):
-            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -157,7 +157,7 @@ class Tweeter(Outputter):
             return None
 
         if self.has_posted(text):
-            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -204,7 +204,7 @@ class Tweeter(Outputter):
             return None
 
         if self.has_posted(text):
-            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
@@ -251,7 +251,7 @@ class Tweeter(Outputter):
             return None
 
         if self.has_posted(text):
-            log.error("Twitter - Skipping duplicate post: " + utils.strip_text(text))
+            log.warning("Twitter - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         try:
