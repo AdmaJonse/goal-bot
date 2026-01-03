@@ -1,115 +1,213 @@
 """
-TODO
+Unit tests for src.data.event
 """
 
 import unittest
 from typing import Any, Optional
 
 from src.data import event
+from src.data.period import Period
 
-class TestAbbreviations(unittest.TestCase):
+
+def make_period(number: int = 1) -> Period:
     """
-    TODO
+    Create a minimal valid Period instance for tests.
     """
+    return Period(number, {
+        "periodType": "REG",
+        "periodNumber": number,
+    })
+
+
+def base_event_data(**overrides) -> dict:
+    """
+    Minimal valid event payload for Event construction.
+    """
+    data = {
+        "timeInPeriod": "01:00",
+        "homeScore": 0,
+        "awayScore": 0,
+    }
+    data.update(overrides)
+    return data
+
+
+class TestEvent(unittest.TestCase):
+    """
+    Tests for play-by-play event parsing helpers and Event behavior.
+    """
+
+    # ---------- to_name ----------
 
     def test_to_name(self):
-        """
-        TODO
-        """
-        data : Any = {
+        data: Any = {
             "playerId": 8477942,
             "firstName": {"default": "Kevin"},
             "lastName": {"default": "Fiala"},
-            "assistToDate": 1
+            "assistToDate": 1,
         }
-        expected : Optional[str] = "Kevin Fiala"
-        actual   : Optional[str] = event.to_name(data)
-        assert expected == actual
- 
+        expected: Optional[str] = "Kevin Fiala"
+        actual: Optional[str] = event.to_name(data)
+        self.assertEqual(expected, actual)
+
+    def test_to_name_missing_fields(self):
+        self.assertIsNone(event.to_name({"firstName": {"default": "Kevin"}}))
+        self.assertIsNone(event.to_name({"lastName": {"default": "Fiala"}}))
+        self.assertIsNone(event.to_name({}))
+
+    # ---------- primary assist ----------
+
     def test_get_primary_assist(self):
-        """
-        TODO
-        """
-        data : Any = {
+        data: Any = {
             "assists": [
                 {
                     "playerId": 8477942,
                     "firstName": {"default": "Kevin"},
                     "lastName": {"default": "Fiala"},
-                    "assistToDate": 1
                 },
                 {
                     "playerId": 8481606,
                     "firstName": {"default": "Jordan"},
                     "lastName": {"default": "Spence"},
-                    "assistToDate": 1
-                }
+                },
             ]
         }
-        expected : str           = "Kevin Fiala"
-        actual   : Optional[str] = event.get_primary_assist(data)
-        assert expected == actual
-
+        expected: str = "Kevin Fiala"
+        actual: Optional[str] = event.get_primary_assist(data)
+        self.assertEqual(expected, actual)
 
     def test_get_invalid_primary_assist(self):
-        """
-        TODO
-        """
-        data     : Any           = {}
-        expected : Optional[str] = None
-        actual   : Optional[str] = event.get_primary_assist(data)
-        assert expected == actual
+        self.assertIsNone(event.get_primary_assist({}))
 
+    # ---------- secondary assist ----------
 
     def test_get_secondary_assist(self):
-        """
-        TODO
-        """
-        data : Any = {
+        data: Any = {
             "assists": [
                 {
                     "playerId": 8477942,
                     "firstName": {"default": "Kevin"},
                     "lastName": {"default": "Fiala"},
-                    "assistToDate": 1
                 },
                 {
                     "playerId": 8481606,
                     "firstName": {"default": "Jordan"},
                     "lastName": {"default": "Spence"},
-                    "assistToDate": 1
-                }
+                },
             ]
         }
-        expected : str           = "Jordan Spence"
-        actual   : Optional[str] = event.get_secondary_assist(data)
-        assert expected == actual
-
+        expected: str = "Jordan Spence"
+        actual: Optional[str] = event.get_secondary_assist(data)
+        self.assertEqual(expected, actual)
 
     def test_get_invalid_secondary_assist(self):
-        """
-        TODO
-        """
-        data     : Any           = {}
-        expected : Optional[str] = None
-        actual   : Optional[str] = event.get_secondary_assist(data)
-        assert expected == actual
-
+        self.assertIsNone(event.get_secondary_assist({}))
 
     def test_get_missing_secondary_assist(self):
-        """
-        TODO
-        """
-        data : Any = {
+        data: Any = {
             "assists": [
                 {
-                    "playerId": 8477942,
                     "firstName": {"default": "Kevin"},
                     "lastName": {"default": "Fiala"},
-                    "assistToDate": 1
                 }
             ]
         }
-        expected : Optional[str] = None
-        actual   : Optional[str] = event.get_secondary_assist(data)
-        assert expected == actual
+        self.assertIsNone(event.get_secondary_assist(data))
+
+    # ---------- team ----------
+
+    def test_get_team_valid(self):
+        data = {"teamAbbrev": {"default": "EDM"}}
+        self.assertEqual("Edmonton", event.get_team(data))
+
+    def test_get_team_invalid(self):
+        self.assertIsNone(event.get_team({"teamAbbrev": {"default": "XXX"}}))
+
+    def test_get_team_missing(self):
+        self.assertIsNone(event.get_team({}))
+
+    # ---------- strength ----------
+
+    def test_get_strength(self):
+        self.assertEqual("powerPlay", event.get_strength({"strength": "powerPlay"}))
+
+    def test_get_strength_missing(self):
+        self.assertIsNone(event.get_strength({}))
+
+    # ---------- empty net ----------
+
+    def test_is_empty_net_true(self):
+        self.assertTrue(event.is_empty_net({"goalModifier": "empty-net"}))
+
+    def test_is_empty_net_false(self):
+        self.assertFalse(event.is_empty_net({"goalModifier": "deflected"}))
+
+    def test_is_empty_net_missing(self):
+        self.assertFalse(event.is_empty_net({}))
+
+    # ---------- time remaining ----------
+
+    def test_get_time_remaining(self):
+        period = make_period(1)
+        data = {"timeInPeriod": "05:30"}
+        self.assertEqual("14:30", event.get_time_remaining(period, data))
+
+    # ---------- Event comparison logic ----------
+
+    def test_is_scorer_modified(self):
+        period = make_period(1)
+
+        prev = event.Event(period, base_event_data(
+            firstName={"default": "Connor"},
+            lastName={"default": "McDavid"},
+        ))
+
+        curr = event.Event(period, base_event_data(
+            firstName={"default": "Leon"},
+            lastName={"default": "Draisaitl"},
+        ))
+
+        self.assertTrue(curr.is_scorer_modified(prev))
+
+    def test_primary_assist_added(self):
+        period = make_period(1)
+
+        prev = event.Event(period, base_event_data())
+
+        curr = event.Event(period, base_event_data(
+            assists=[
+                {
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
+                }
+            ]
+        ))
+
+        self.assertTrue(curr.is_primary_assist_added(prev))
+
+    def test_secondary_assist_added(self):
+        period = make_period(1)
+
+        prev = event.Event(period, base_event_data(
+            assists=[
+                {
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
+                }
+            ]
+        ))
+
+        curr = event.Event(period, base_event_data(
+            assists=[
+                {
+                    "firstName": {"default": "Kevin"},
+                    "lastName": {"default": "Fiala"},
+                },
+                {
+                    "firstName": {"default": "Jordan"},
+                    "lastName": {"default": "Spence"},
+                },
+            ]
+        ))
+
+        self.assertTrue(curr.is_secondary_assist_added(prev))

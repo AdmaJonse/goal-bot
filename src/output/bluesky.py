@@ -5,6 +5,7 @@ authenticate, post and reply.
 
 import os
 import time
+import re
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -39,22 +40,27 @@ def now() -> str:
     """
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
+HASHTAG_RE = re.compile(r"#\w+")
 
-def get_tag_indices(text : str) -> List[tuple[int,int]]:
+def get_tag_indices(text: str) -> list[tuple[int, int]]:
     """
     Bluesky doesn't just automatically parse hashtag locations,
     so you need to parse the text of your post and find any hashtags.
     Then you need to return the start and end indices of each
     hashtag. This is then sent in the post request as a facet.
     """
-    indices : List[tuple[int,int]] = []
-    for word in text.split():
-        if word.startswith("#"):
-            start = text.find(word)
-            end   = start + len(word)
-            indices.append((start, end))
-    return indices
 
+    indices: list[tuple[int, int]] = []
+
+    for match in HASHTAG_RE.finditer(text):
+        char_start, char_end = match.span()
+
+        byte_start = len(text[:char_start].encode("utf-8"))
+        byte_end = len(text[:char_end].encode("utf-8"))
+
+        indices.append((byte_start, byte_end))
+
+    return indices
 
 def parse_tags(text : str) -> List:
     """
@@ -72,7 +78,7 @@ def parse_tags(text : str) -> List:
             "features": [
                 {
                     "$type": "app.bsky.richtext.facet#tag",
-                    "tag": text[start+1:end]
+                    "tag": text.encode("utf-8")[start:end].decode("utf-8")[1:]
                 }
             ]})
     return facets
