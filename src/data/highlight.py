@@ -107,6 +107,8 @@ class Highlight:
 
         if self.event.is_empty_net:
             goal_string = templates.EMPTY_NET_GOAL_TEMPLATE.format(**event_values)
+        elif self.event.period.is_shootout:
+            goal_string = templates.SHOOTOUT_GOAL_TEMPLATE.format(**event_values)
         elif self.event.strength == "pp":
             goal_string = templates.POWER_PLAY_GOAL_TEMPLATE.format(**event_values)
         elif self.event.strength == "sh":

@@ -9,7 +9,7 @@ from src.data.game_type import GameType
 
 REGULATION : str = "REG"
 OVERTIME   : str = "OT"
-SHOOTOUT   : str = "SHO"
+SHOOTOUT   : str = "SO"
 
 
 class Period:

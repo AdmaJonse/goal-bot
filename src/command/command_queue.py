@@ -7,6 +7,7 @@ from typing import Optional, List
 
 from src.command.command import Command, Priority
 from src.logger import log
+from src.output.output import output
 
 
 class State(Enum):
@@ -94,6 +95,12 @@ class CommandQueue:
         """
         Stop processing commands from the queue.
         """
+        # In dry run mode we don't actually stop the command server so that
+        # the server remains running for testing and interaction.
+        if output.dry_run:
+            log.info("Dry run enabled; ignoring stop request for command server.")
+            return
+
         self.state = State.STOPPING
         self.enqueue(Shutdown())
 

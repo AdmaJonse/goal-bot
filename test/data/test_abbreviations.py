@@ -1,5 +1,8 @@
 """
-TODO
+Unit tests for abbreviation helpers.
+
+These tests verify the mapping between team abbreviations and their
+corresponding location names, and vice versa.
 """
 
 import unittest
@@ -8,12 +11,12 @@ from src.data import abbreviations
 
 class TestAbbreviations(unittest.TestCase):
     """
-    TODO
+    Tests for `get_location` and `get_abbreviation` helper functions.
     """
 
     def test_get_location(self):
         """
-        TODO
+        Verify abbreviation-to-location mapping for valid and invalid inputs.
         """
         expected : str = "Anaheim"
         actual   : str = abbreviations.get_location("ANA")
@@ -29,7 +32,7 @@ class TestAbbreviations(unittest.TestCase):
 
     def test_get_abbreviation(self):
         """
-        TODO
+        Verify location-to-abbreviation mapping for valid and invalid inputs.
         """
         expected : str = "ANA"
         actual   : str = abbreviations.get_abbreviation("Anaheim")
