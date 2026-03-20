@@ -27,6 +27,12 @@ Empty net goal for {team}!
 Scored by {scorer} with {time} remaining in the {period} period.
 """
 
+SHOOTOUT_GOAL_TEMPLATE = """\
+{team} goal!
+
+Scored by {scorer} in the shootout.
+"""
+
 SCORE_TEMPLATE = """
 {home_team}: {home_goals}
 {away_team}: {away_goals}
