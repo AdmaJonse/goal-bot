@@ -7,8 +7,8 @@ import threading
 import time
 
 from src import bot
-from src import logger
-from src.config import HealthConfig, load_health_config
+from src.logger import log
+from src.config.health import HealthConfig, load_health_config
 
 HEALTH_CONFIG: HealthConfig = load_health_config()
 
@@ -18,10 +18,7 @@ def health() -> tuple[str, int]:
     Health check endpoint.
     """
     if not bot.check_health(HEALTH_CONFIG.timeout_seconds):
-        logger.log.error(
-            "Health check command was not processed within "
-            f"{HEALTH_CONFIG.timeout_seconds:.2f} seconds"
-        )
+        log.error("Health check command timed out.")
         return "Health check failed", 503
     return "Healthy", 200
 
@@ -46,16 +43,12 @@ def health_watchdog() -> None:
         healthy = bot.check_health(HEALTH_CONFIG.timeout_seconds)
         if healthy:
             if consecutive_failures > 0:
-                logger.log.info("Health watchdog recovered after transient failures")
+                log.info("Health watchdog recovered after transient failures")
             consecutive_failures = 0
         else:
             consecutive_failures += 1
-            logger.log.error(
-                "Health watchdog failure "
-                f"{consecutive_failures}/{HEALTH_CONFIG.watchdog_failures}"
-            )
             if consecutive_failures >= HEALTH_CONFIG.watchdog_failures:
-                logger.log.error("Health watchdog forcing process exit for container restart")
+                log.error("Health watchdog forcing process exit for container restart")
                 os._exit(1)
 
         time.sleep(HEALTH_CONFIG.watchdog_interval_seconds)
