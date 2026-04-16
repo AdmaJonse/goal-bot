@@ -40,7 +40,7 @@ def check_game_status() -> None:
     log.info("Exiting status thread")
 
 
-def check_health(timeout : int = 1) -> bool:
+def check_health(timeout : float = 1.0) -> bool:
     """
     Check the health of the application by enqueueing a command and
     ensuring that it is processed in a reasonable amount of time.
