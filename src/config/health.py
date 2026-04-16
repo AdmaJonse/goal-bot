@@ -5,7 +5,7 @@ Configuration for the health check endpoint and watchdog.
 import os
 from dataclasses import dataclass
 
-from src import logger
+from src.logger import log
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ def _get_float_env(name: str, default: float) -> float:
     try:
         return float(value)
     except ValueError:
-        logger.log.warning(f"Invalid {name} value {value!r}; using default {default}")
+        log.warning(f"Invalid {name} value {value!r}; using default {default}")
         return default
 
 
@@ -38,7 +38,7 @@ def _get_int_env(name: str, default: int) -> int:
     try:
         return int(value)
     except ValueError:
-        logger.log.warning(f"Invalid {name} value {value!r}; using default {default}")
+        log.warning(f"Invalid {name} value {value!r}; using default {default}")
         return default
 
 
@@ -51,7 +51,7 @@ def _get_bool_env(name: str, default: bool) -> bool:
         return True
     if normalized in {"0", "false", "f", "no", "n", "off"}:
         return False
-    logger.log.warning(f"Invalid {name} value {value!r}; using default {default}")
+    log.warning(f"Invalid {name} value {value!r}; using default {default}")
     return default
 
 
