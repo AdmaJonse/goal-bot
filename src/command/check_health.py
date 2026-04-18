@@ -22,7 +22,7 @@ class CheckHealth(Command):
         """
         Execute the command.
         """
-        log.info("Checking health of application.")
+        log.verbose("Checking health of application.")
         self._event.set()
 
     @property
