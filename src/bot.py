@@ -8,7 +8,7 @@ from typing import List, Optional
 import pause
 
 from src import schedule
-from src.command.command_queue import command_queue
+from src.command.command_queue import command_queue, State
 from src.command.check_game_status import CheckGameStatus
 from src.command.check_health import CheckHealth
 from src.game_thread import GameThread
@@ -45,6 +45,9 @@ def check_health(timeout : float = 1.0) -> bool:
     Check the health of the application by enqueueing a command and
     ensuring that it is processed in a reasonable amount of time.
     """
+    if command_queue.state != State.RUNNING:
+        return True
+
     health_check = CheckHealth()
     command_queue.enqueue(health_check)
     result = health_check.event.wait(timeout)
@@ -80,10 +83,11 @@ def check_for_updates() -> None:
             # Start the command server. This call will block until the shutdown command is executed.
             command_queue.start()
 
+            status_thread.join()
+
             # Stop checking the status of games
             threads.clear()
             output.clear_posts()
-            status_thread.join()
             log.info("All games are finished for the day. Pausing until tomorrow.")
 
         else:
