@@ -8,7 +8,6 @@ from typing import Optional, List
 
 from src.command.command import Command, Priority
 from src.logger import log
-from src.output.output import output
 
 
 class State(Enum):
