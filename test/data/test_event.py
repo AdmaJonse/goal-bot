@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from src.data import event
 from src.data.period import Period
+from src.data.highlight import Highlight
 
 
 def make_period(number: int = 1) -> Period:
@@ -211,3 +212,63 @@ class TestEvent(unittest.TestCase):
         ))
 
         self.assertTrue(curr.is_secondary_assist_added(prev))
+
+
+class DummyTeam:
+    def __init__(self, location, abbreviation="", hashtag="", playoff_hashtag=""):
+        self.location = location
+        self.abbreviation = abbreviation
+        self.hashtag = hashtag
+        self.playoff_hashtag = playoff_hashtag
+
+
+class DummyGameData:
+    def __init__(self, home_location, away_location):
+        self.home = DummyTeam(home_location, "HOME", "#Home")
+        self.away = DummyTeam(away_location, "AWAY", "#Away")
+
+    def get_team_string(self, team):
+        if team == self.home.location:
+            return self.home.location
+        if team == self.away.location:
+            return self.away.location
+        return ""
+
+    @property
+    def hashtags(self):
+        return f"#{self.away.abbreviation}vs{self.home.abbreviation} {self.home.hashtag} {self.away.hashtag}"
+
+
+class TestHighlightShootout(unittest.TestCase):
+    """
+    Tests for formatting of highlight posts during special periods.
+    """
+
+    def test_shootout_goal_uses_shootout_template(self):
+        # Create a shootout period
+        period = Period(None, {"periodType": "SO", "number": 0})
+
+        # Minimal event data for a shootout goal
+        data = {
+            "timeInPeriod": "00:00",
+            "homeScore": 0,
+            "awayScore": 1,
+            "teamAbbrev": {"default": "EDM"},
+            "firstName": {"default": "John"},
+            "lastName": {"default": "Doe"},
+        }
+
+        evt = event.Event(period, data)
+
+        # Construct a dummy GameData-like object
+        game_data = DummyGameData("Edmonton", "Calgary")
+
+        # Create a Highlight instance without running __init__ (avoids network calls)
+        hl = Highlight.__new__(Highlight)
+        hl.event = evt
+        hl.game_data = game_data
+
+        post = hl.get_post()
+
+        # Ensure shootout wording appears in the generated post
+        self.assertIn(f"Scored by {evt.scorer} in the shootout.", post)

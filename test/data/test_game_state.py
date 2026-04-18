@@ -1,5 +1,8 @@
 """
-TODO
+Unit tests for the `game_state` lookup mapping.
+
+These tests verify that the string codes map to the correct
+`GameState` enum values used throughout the application.
 """
 
 import unittest
@@ -9,12 +12,12 @@ from src.data import game_state
 
 class TestGameState(unittest.TestCase):
     """
-    TODO
+    Tests mapping of game state codes to the `GameState` enum.
     """
 
     def test_future(self):
         """
-        TODO
+        Lookup for the 'FUT' code returns GameState.FUTURE.
         """
         expected : game_state.GameState           = game_state.GameState.FUTURE
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("FUT")
@@ -22,7 +25,7 @@ class TestGameState(unittest.TestCase):
 
     def test_pregame(self):
         """
-        TODO
+        Lookup for the 'PRE' code returns GameState.PREGAME.
         """
         expected : game_state.GameState           = game_state.GameState.PREGAME
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("PRE")
@@ -30,7 +33,7 @@ class TestGameState(unittest.TestCase):
 
     def test_soft_final(self):
         """
-        TODO
+        Lookup for the 'OVER' code returns GameState.SOFT_FINAL.
         """
         expected : game_state.GameState           = game_state.GameState.SOFT_FINAL
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("OVER")
@@ -38,7 +41,7 @@ class TestGameState(unittest.TestCase):
 
     def test_hard_final(self):
         """
-        TODO
+        Lookup for the 'FINAL' code returns GameState.HARD_FINAL.
         """
         expected : game_state.GameState           = game_state.GameState.HARD_FINAL
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("FINAL")
@@ -46,7 +49,7 @@ class TestGameState(unittest.TestCase):
 
     def test_official(self):
         """
-        TODO
+        Lookup for the 'OFF' code returns GameState.OFFICIAL.
         """
         expected : game_state.GameState           = game_state.GameState.OFFICIAL
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("OFF")
@@ -54,7 +57,7 @@ class TestGameState(unittest.TestCase):
 
     def test_live(self):
         """
-        TODO
+        Lookup for the 'LIVE' code returns GameState.LIVE.
         """
         expected : game_state.GameState           = game_state.GameState.LIVE
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("LIVE")
@@ -62,7 +65,7 @@ class TestGameState(unittest.TestCase):
 
     def test_critical(self):
         """
-        TODO
+        Lookup for the 'CRIT' code returns GameState.CRITICAL.
         """
         expected : game_state.GameState           = game_state.GameState.CRITICAL
         actual   : Optional[game_state.GameState] = game_state.game_state_lookup.get("CRIT")
