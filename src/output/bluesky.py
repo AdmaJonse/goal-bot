@@ -124,8 +124,8 @@ class BlueSky(Outputter):
         self.auth         : Authentication = Authentication()
         self.session      : Optional[dict] = None
         self.client       : atproto.Client = atproto.Client()
-        self.user_id      : str = ""
-        self.access_token : str = ""
+        self.access_token  : str = ""
+        self.refresh_token : str = ""
         self.posts        : List[str] = []
         self._initialized : bool = False
 
