@@ -124,13 +124,10 @@ class BlueSky(Outputter):
         self.auth         : Authentication = Authentication()
         self.session      : Optional[dict] = None
         self.client       : atproto.Client = atproto.Client()
-        self.client.login(self.auth.handle, self.auth.password)
-        self.user_id = ""
-        self.access_token = ""
-        self.create_session()
-
-        # Get any posts made my the account so far today
-        self.posts = self.get_today_posts()
+        self.user_id      : str = ""
+        self.access_token : str = ""
+        self.posts        : List[str] = []
+        self._initialized : bool = False
 
 
     def name(self) -> str:
@@ -138,6 +135,20 @@ class BlueSky(Outputter):
         Return the name of this outputter.
         """
         return "bluesky"
+
+
+    def _ensure_initialized(self) -> None:
+        """
+        Perform one-time network setup: log in the atproto client, create an
+        API session, and load today's posts for duplicate detection.
+        Called lazily on the first post or reply so that importing this module
+        does not require live credentials.
+        """
+        if not self._initialized:
+            self.client.login(self.auth.handle, self.auth.password)
+            self.create_session()
+            self.posts = self.get_today_posts()
+            self._initialized = True
 
 
     def create_session(self):
@@ -195,6 +206,8 @@ class BlueSky(Outputter):
 
         log.info("Bluesky - Post: " + utils.strip_text(text))
 
+        self._ensure_initialized()
+
         if len(text) > MAX_LENGTH:
             log.error("Bluesky - post is longer than the maximum length")
             return None
@@ -219,6 +232,8 @@ class BlueSky(Outputter):
         """
 
         log.info("Bluesky - Reply: " + utils.strip_text(text))
+
+        self._ensure_initialized()
 
         if parent is None:
             log.error("Bluesky - parent post is missing")
