@@ -83,7 +83,6 @@ class Tweeter(Outputter):
     def __init__(self) -> None:
         super().__init__()
         self.config : Authentication = Authentication()
-        self.api    : tweepy.API     = tweepy.API(self.config.auth)
         self.client : tweepy.Client  = tweepy.Client(self.config.bearer_token,
                                                      self.config.consumer_key,
                                                      self.config.consumer_secret,
@@ -91,12 +90,18 @@ class Tweeter(Outputter):
                                                      self.config.access_token_secret)
 
         # Get the account's user ID
-        user = self.client.get_user(username=USERNAME)
-        if is_data_valid(user):
-            self.user_id : int = user.data.get("id", 0)
+        try:
+            user = self.client.get_user(username=USERNAME)
+            if is_data_valid(user):
+                self.user_id : int = user.data.get("id", 0)
+        except tweepy.TweepyException as err:
+            log.error("Twitter - could not retrieve user: " + str(err))
 
         # Get any posts made my the account so far today
-        self.posts = self.get_today_posts()
+        try:
+            self.posts = self.get_today_posts()
+        except tweepy.TweepyException as err:
+            log.error("Twitter - could not retrieve today's posts: " + str(err))
 
 
     def name(self) -> str:
@@ -186,7 +191,8 @@ class Tweeter(Outputter):
             return None
 
         log.verbose("Twitter - Uploading video: " + filename)
-        media = self.api.media_upload(filename, media_category="tweet_video")
+        api = tweepy.API(self.config.auth)
+        media = api.media_upload(filename, media_category="tweet_video")
         video.remove(filename)
         return media.media_id_string
 
