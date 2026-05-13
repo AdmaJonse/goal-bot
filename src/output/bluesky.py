@@ -346,7 +346,7 @@ class BlueSky(Outputter):
         return self.request(post)
 
 
-    def _perform_blob_upload(self, data: bytes) -> Optional[dict]:
+    def _perform_blob_upload(self, data: bytes) -> Optional[requests.Response]:
         """Helper method to perform blob upload with retries."""
         upload_attempts = 3
         response = None
