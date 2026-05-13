@@ -6,6 +6,7 @@ import unittest
 from typing import Any, Optional
 
 from src.data import event
+from src.data.game_type import GameType
 from src.data.period import Period
 from src.data.highlight import Highlight
 
@@ -14,9 +15,9 @@ def make_period(number: int = 1) -> Period:
     """
     Create a minimal valid Period instance for tests.
     """
-    return Period(number, {
+    return Period(GameType.REGULAR_SEASON, {
         "periodType": "REG",
-        "periodNumber": number,
+        "number": number,
     })
 
 

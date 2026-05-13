@@ -6,6 +6,7 @@ from typing import Optional
 
 from src.parser.parser import Parser
 from src.data.game_data import GameData
+from src.logger import log
 
 class GameDataParser(Parser):
     """
@@ -22,5 +23,8 @@ class GameDataParser(Parser):
         """
         self.get_data()
         if self.data:
-            return GameData(self.data)
+            try:
+                return GameData(self.data)
+            except (KeyError, TypeError, ValueError) as exc:
+                log.warning("Invalid game data: " + str(exc))
         return None

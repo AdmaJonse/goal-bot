@@ -24,4 +24,4 @@ types-waitress == 3.0.0.20241001
 urllib3 == 2.2.3
 waitress == 3.0.0
 Werkzeug == 3.0.4
-youtube-dl == 2021.12.17
+yt-dlp == 2026.3.17

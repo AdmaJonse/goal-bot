@@ -81,8 +81,13 @@ def get_schedule_json() -> Optional[Any]:
     Return the JSON record describing the team's games that are
     scheduled today.
     """
+    return get_schedule_json_for_date(get_current_date())
 
-    date   : datetime = get_current_date()
+
+def get_schedule_json_for_date(date: datetime) -> Optional[Any]:
+    """
+    Return the JSON schedule data for the specified date.
+    """
     url    : str      = SCHEDULE_API + "/" + date_to_string(date)
     params : str      = ""
 
@@ -144,14 +149,21 @@ def get_todays_games() -> Optional[List[int]]:
     """
     Return the list of games for today.
     """
+    return get_games_for_date(get_current_date())
+
+
+def get_games_for_date(date: datetime) -> Optional[List[int]]:
+    """
+    Return the list of games for the provided date.
+    """
     try:
 
-        data  : Optional[Any] = get_schedule_json()
+        data  : Optional[Any] = get_schedule_json_for_date(date)
         if data is not None:
             games : List[int]     = []
             for game in data["gameWeek"][0]["games"]:
                 games.append(game["id"])
-            log.verbose("Today's games: " + str(games))
+            log.verbose("Games on " + date_to_string(date) + ": " + str(games))
             return games
 
     except IndexError:

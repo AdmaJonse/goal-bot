@@ -60,7 +60,7 @@ def load_health_config() -> HealthConfig:
     Load health configuration from environment variables.
     """
     return HealthConfig(
-        timeout_seconds=_get_float_env("HEALTH_TIMEOUT_SECONDS", 5.0),
+        timeout_seconds=_get_float_env("HEALTH_TIMEOUT_SECONDS", 90.0),
         watchdog_enabled=_get_bool_env("HEALTH_WATCHDOG_ENABLED", False),
         watchdog_interval_seconds=_get_float_env("HEALTH_WATCHDOG_INTERVAL_SECONDS", 30.0),
         watchdog_failures=_get_int_env("HEALTH_WATCHDOG_FAILURES", 3),

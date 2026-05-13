@@ -4,52 +4,70 @@ This module contains functions for downloading, trimming, and normalizing videos
 
 import os
 import time
-
+import urllib
 from typing import Optional
 
-import urllib
-import pymediainfo
-import youtube_dl
-
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+import imageio_ffmpeg
+import pymediainfo
+import yt_dlp
+from yt_dlp.utils import DownloadError, ExtractorError
 
 from src.logger import log
 
-MAXIMUM_DURATION=60 # seconds
-MAXIMUM_SIZE=50000000 # bytes
+FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
+os.environ.setdefault("IMAGEIO_FFMPEG_EXE", FFMPEG_PATH)
+
+MAXIMUM_DURATION=100 # seconds
+MAXIMUM_SIZE=100000000 # bytes
+
+DOWNLOAD_RETRY_DELAY_SECONDS = 10
+DELETE_RETRY_ATTEMPTS = 5
+DELETE_RETRY_DELAY_SECONDS = 0.5
+
 
 def download_file(url : str, filename : str) -> bool:
     """
     Download the .mp4 from the given URL.
     """
-    success : bool = False
-    with youtube_dl.YoutubeDL({"outtmpl": filename, "quiet": True}) as ydl:
+    options = {
+        "outtmpl": filename,
+        "quiet": True,
+        "noplaylist": True,
+        "retries": 3,
+        "ffmpeg_location": FFMPEG_PATH,
+    }
+
+    with yt_dlp.YoutubeDL(options) as ydl:
         try:
             ydl.download([url])
-            success = True
+            return True
         except urllib.error.HTTPError:
             log.error("HTTP error occurred while attempting download.")
-        except youtube_dl.utils.ExtractorError:
+        except ExtractorError:
             log.error("Extractor error occurred while attempting download.")
-        except youtube_dl.utils.DownloadError:
+        except DownloadError:
             log.error("Download error occurred while attempting download.")
-    return success
+    return False
 
-def download(url : str, filename : str) -> None:
+def download(url : str, filename : str) -> bool:
     """
     Download the .mp4 from the given URL. Retry up to five times if the download fails.
+    Returns true when a file was downloaded successfully.
     """
     is_downloaded : bool = False
     max_attempts  : int  = 5
 
     # Attempt to download until the download is successful. Give up if we exceed the maximum
     # number of attempts.
-    log.verbose("Attempting download from url: " + url)
+    log.info("Attempting download from url: " + url)
     for _ in range(max_attempts):
         is_downloaded = download_file(url, filename)
         if is_downloaded:
             break
-        time.sleep(2)
+        time.sleep(DOWNLOAD_RETRY_DELAY_SECONDS)
+
+    return is_downloaded
 
 
 def trim(file : str, start : float, end : float) -> str:
@@ -68,6 +86,8 @@ def get_duration(file : str) -> float:
     media_info = pymediainfo.MediaInfo.parse(file)
     for track in media_info.tracks:
         if track.track_type == "Video":
+            if track.duration is None:
+                continue
             return float(track.duration) / 1000
     return 0
 
@@ -116,4 +136,22 @@ def remove(file : str) -> None:
     """
     Remove the file.
     """
-    os.remove(file)
+    for attempt in range(1, DELETE_RETRY_ATTEMPTS + 1):
+        try:
+            os.remove(file)
+            return
+        except FileNotFoundError:
+            # Another code path may have already removed the temp media.
+            log.warning("File already removed: " + file)
+            return
+        except PermissionError as err:
+            if attempt < DELETE_RETRY_ATTEMPTS:
+                time.sleep(DELETE_RETRY_DELAY_SECONDS)
+                continue
+            # Cleanup failures should not terminate the posting thread.
+            log.error("Failed to remove file: " + file + " - " + str(err))
+            return
+        except OSError as err:
+            # Cleanup failures should not terminate the posting thread.
+            log.error("Failed to remove file: " + file + " - " + str(err))
+            return
