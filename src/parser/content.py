@@ -28,6 +28,53 @@ class ContentParser(Parser):
         self.start_time     : datetime = start_time
 
 
+    def _process_new_highlight(self, highlight: Highlight) -> None:
+        """
+        Process a newly discovered highlight.
+        """
+        log.info("Adding highlight to list: " + str(highlight.id))
+        self.highlight_list.add(highlight)
+
+        if highlight.event is not None:
+            highlight.post_id = {"_queued": None}
+            command_queue.enqueue(PostHighlight(highlight))
+        else:
+            log.error("Highlight event is none. Could not enqueue.")
+
+
+    def _process_existing_highlight(
+        self, highlight: Highlight, previous: Optional[Highlight]
+    ) -> None:
+        """
+        Process an existing highlight (retry or update).
+        """
+        if previous is None or self._is_post_terminal(previous):
+            # Check for event update on terminal posts
+            if previous is not None and previous.event != highlight.event:
+                log.info("Updating existing highlight: " + str(highlight.id))
+                self.highlight_list.update(highlight)
+                command_queue.enqueue(PostReply(highlight, previous))
+            return
+
+        # Non-terminal: check for retry eligibility
+        if previous.event != highlight.event:
+            self.highlight_list.update(highlight)
+            previous = highlight
+
+        if "_pending" in previous.post_id or "_queued" in previous.post_id:
+            return  # Still pending or queued, no retry
+
+        # Check if ready for retry
+        retry_text: Optional[str] = previous.get_post()
+        if retry_text is not None and self._is_duplicate_on_all_outputs(retry_text):
+            previous.post_id = {"_duplicate": None}
+            return
+
+        log.info("Retrying highlight post: " + str(highlight.id))
+        previous.post_id = {"_queued": None}
+        command_queue.enqueue(PostHighlight(previous))
+
+
     def parse(self) -> None:
         """
         Parse the content page for the current game to determine if there are any new
@@ -57,42 +104,10 @@ class ContentParser(Parser):
                     continue
 
                 if not self.highlight_list.exists(highlight):
-                    log.info("Adding highlight to list: " + str(highlight.id))
-                    self.highlight_list.add(highlight)
-
-                    if highlight.event is not None:
-                        highlight.post_id = {"_queued": None}
-                        command_queue.enqueue(PostHighlight(highlight))
-                    else:
-                        log.error("Highlight event is none. Could not enqueue.")
+                    self._process_new_highlight(highlight)
                 else:
-                    previous : Optional[Highlight] = self.highlight_list.get(highlight.id)
-                    if previous is not None and not self._is_post_terminal(previous):
-                        if previous.event != highlight.event:
-                            self.highlight_list.update(highlight)
-                            previous = highlight
-
-                        if (
-                            "_pending" not in previous.post_id
-                            and "_queued" not in previous.post_id
-                        ):
-                            retry_text: Optional[str] = previous.get_post()
-                            if (
-                                retry_text is not None
-                                and self._is_duplicate_on_all_outputs(retry_text)
-                            ):
-                                previous.post_id = {"_duplicate": None}
-                                continue
-
-                            log.info("Retrying highlight post: " + str(highlight.id))
-                            previous.post_id = {"_queued": None}
-                            command_queue.enqueue(PostHighlight(previous))
-                        continue
-
-                    if previous is not None and previous.event != highlight.event:
-                        log.info("Updating existing highlight: " + str(highlight.id))
-                        self.highlight_list.update(highlight)
-                        command_queue.enqueue(PostReply(highlight, previous))
+                    previous = self.highlight_list.get(highlight.id)
+                    self._process_existing_highlight(highlight, previous)
 
 
     @staticmethod

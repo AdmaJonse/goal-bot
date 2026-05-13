@@ -127,8 +127,7 @@ class BlueSky(Outputter):
         self.auth         : Authentication = Authentication()
         self.session      : Optional[dict] = None
         self.client       : atproto.Client = atproto.Client()
-        self.access_token  : str = ""
-        self.refresh_token : str = ""
+        self._session_tokens: dict = {}
         self.posts        : List[str] = []
         self._initialized : bool = False
 
@@ -138,8 +137,7 @@ class BlueSky(Outputter):
         Clear in-memory session and token state after auth failures.
         """
         self.session = None
-        self.access_token = ""
-        self.refresh_token = ""
+        self._session_tokens = {}
 
 
     def name(self) -> str:
@@ -219,8 +217,10 @@ class BlueSky(Outputter):
             return False
 
         self.session = session_payload
-        self.access_token = access_token
-        self.refresh_token = refresh_token
+        self._session_tokens = {
+            "access": access_token,
+            "refresh": refresh_token,
+        }
         return True
 
 
@@ -246,9 +246,10 @@ class BlueSky(Outputter):
             log.error("Bluesky - Session missing did.")
             return None
 
+        access_token = self._session_tokens.get("access", "")
         response = requests.post(
                     BASE_URL + "com.atproto.repo.createRecord",
-                    headers={"Authorization": "Bearer " + self.access_token},
+                    headers={"Authorization": "Bearer " + access_token},
                     json={
                         "repo": did,
                         "collection": "app.bsky.feed.post",
@@ -345,6 +346,39 @@ class BlueSky(Outputter):
         return self.request(post)
 
 
+    def _perform_blob_upload(self, data: bytes) -> Optional[dict]:
+        """Helper method to perform blob upload with retries."""
+        upload_attempts = 3
+        response = None
+        for attempt in range(1, upload_attempts + 1):
+            if not self.create_session():
+                attempt_str = f"{attempt}/{upload_attempts}"
+                msg = f"Could not create session for video upload attempt {attempt_str}."
+                log.error("Bluesky - " + msg)
+                if attempt < upload_attempts:
+                    time.sleep(10)
+                continue
+            try:
+                socket.setdefaulttimeout(120)
+                access_token = self._session_tokens.get("access", "")
+                response = requests.post(
+                    BASE_URL + "com.atproto.repo.uploadBlob",
+                    headers={
+                        "Content-Type": "video/mp4",
+                        "Authorization": "Bearer " + access_token,
+                    },
+                    data=data,
+                    timeout=120)
+                break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                log.error(f"Bluesky - Video upload attempt {attempt} failed: {e}")
+                if attempt < upload_attempts:
+                    time.sleep(10)
+            finally:
+                socket.setdefaulttimeout(None)
+        return response
+
+
     def upload_video(self, url : str) -> Optional[str]:
         """
         Download the .mp4 from the given URL, perform a media upload,
@@ -372,34 +406,7 @@ class BlueSky(Outputter):
                 log.error("Bluesky - Failed to read video file: " + filename)
                 return None
 
-            upload_attempts = 3
-            response = None
-            for attempt in range(1, upload_attempts + 1):
-                if not self.create_session():
-                    log.error(
-                        "Bluesky - Could not create session for video upload "
-                        + f"attempt {attempt}/{upload_attempts}."
-                    )
-                    if attempt < upload_attempts:
-                        time.sleep(10)
-                    continue
-                try:
-                    socket.setdefaulttimeout(120)
-                    response = requests.post(
-                        BASE_URL + "com.atproto.repo.uploadBlob",
-                        headers={
-                            "Content-Type": "video/mp4",
-                            "Authorization": "Bearer " + self.access_token,
-                        },
-                        data=data,
-                        timeout=120)
-                    break
-                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                    log.error(f"Bluesky - Video upload attempt {attempt}/{upload_attempts} failed: " + str(e))
-                    if attempt < upload_attempts:
-                        time.sleep(10)
-                finally:
-                    socket.setdefaulttimeout(None)
+            response = self._perform_blob_upload(data)
 
             if response is None:
                 log.error("Bluesky - All upload attempts failed: " + filename)
@@ -539,7 +546,7 @@ class BlueSky(Outputter):
             for post in feed.feed:
                 utc_time     = parser.parse(post.post.record.created_at)
                 post_date    = schedule.utc_to_local(utc_time).date()
-                if post_date == target_day or post_date == next_day:
+                if post_date in (target_day, next_day):
                     normalized_text = self._normalize_post_text(post.post.record.text)
                     result.append(normalized_text)
         return result

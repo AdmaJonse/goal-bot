@@ -136,7 +136,7 @@ class Tweeter(Outputter):
         Tweepy 4.16.0 doesn't support a timeout constructor argument.
         """
         original_request = self.client.session.request
- 
+
         def request_with_timeout(*args, **kwargs):
             kwargs.setdefault("timeout", TWITTER_REQUEST_TIMEOUT_SECONDS)
             return original_request(*args, **kwargs)
