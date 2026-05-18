@@ -105,7 +105,11 @@ def reply(parents : Dict[str, Optional[Dict[str, str]]],
     return post_ids
 
 
-def post_with_media(text: str, media: str) -> Dict[str, Optional[Dict[str, str]]]:
+def post_with_media(
+    text: str,
+    media: str,
+    duplicate_status: Optional[Dict[str, bool]] = None,
+) -> Dict[str, Optional[Dict[str, str]]]:
     """
     Send a post with the specified text and media.
     """
@@ -114,10 +118,13 @@ def post_with_media(text: str, media: str) -> Dict[str, Optional[Dict[str, str]]
     short_text = utils.strip_text(text)
 
     for outputter in output.outputters:
-        if outputter.has_posted(text):
+        outputter_name = outputter.name()
+        has_posted = duplicate_status.get(outputter_name, False) if duplicate_status is not None else outputter.has_posted(text)
+
+        if has_posted:
             log.warning(outputter.name().capitalize()
                         + " - Skipping duplicate post: " + short_text)
-            post_ids[outputter.name()] = None
+            post_ids[outputter_name] = None
             continue
         outputters_to_send.append(outputter)
 
@@ -127,7 +134,7 @@ def post_with_media(text: str, media: str) -> Dict[str, Optional[Dict[str, str]]
 
     downloaded_media = _download_media_once(media)
 
-    if _is_remote_media(media) and downloaded_media is None and not output.dry_run:
+    if media and downloaded_media is None and not output.dry_run:
         for outputter in outputters_to_send:
             post_ids[outputter.name()] = None
         return post_ids
@@ -176,7 +183,7 @@ def reply_with_media(
 
     downloaded_media = _download_media_once(media)
 
-    if _is_remote_media(media) and downloaded_media is None and not output.dry_run:
+    if media and downloaded_media is None and not output.dry_run:
         for outputter in outputters_to_send:
             post_ids[outputter.name()] = None
         return post_ids

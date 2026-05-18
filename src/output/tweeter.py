@@ -123,6 +123,9 @@ class Tweeter(Outputter):
         """
         Set the date used to query duplicate history, then refresh cache.
         """
+        if value == self.duplicate_reference_date:
+            return
+
         self.duplicate_reference_date = value
         try:
             self.posts = self.get_posts_for_reference_day()

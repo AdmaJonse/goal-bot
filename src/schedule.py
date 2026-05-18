@@ -72,7 +72,7 @@ def get_morning() -> datetime:
     Return a set time in the morning for the current date.
     """
     now     : datetime = datetime.now(TIME_ZONE)
-    morning : datetime = now.replace(hour=7, minute=0, second=0)
+    morning : datetime = now.replace(hour=7, minute=0, second=0, microsecond=0)
     return morning
 
 

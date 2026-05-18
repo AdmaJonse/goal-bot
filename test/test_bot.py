@@ -2,6 +2,8 @@
 Tests for the bot update loop.
 """
 
+from datetime import datetime, timedelta
+
 import pytest
 
 from src import bot
@@ -56,3 +58,20 @@ def test_check_for_updates_clears_threads_before_join(monkeypatch) -> None:
 
     with pytest.raises(RuntimeError, match="stop-loop"):
         bot.check_for_updates()
+
+
+def test_wait_until_morning_sleeps_until_next_day_when_at_boundary(monkeypatch) -> None:
+    """
+    At exactly the morning boundary, the bot should pause until tomorrow.
+    """
+    boundary = datetime(2026, 5, 15, 7, 0, 0)
+    paused_until = {"value": None}
+
+    monkeypatch.setattr(bot.schedule, "get_current_time", lambda: boundary)
+    monkeypatch.setattr(bot.schedule, "get_morning", lambda: boundary)
+    monkeypatch.setattr(bot.schedule, "time_to_string", lambda _value: "mock-time")
+    monkeypatch.setattr(bot.pause, "until", lambda value: paused_until.__setitem__("value", value))
+
+    bot.wait_until_morning()
+
+    assert paused_until["value"] == boundary + timedelta(days=1)

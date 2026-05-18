@@ -25,7 +25,7 @@ def wait_until_morning() -> None:
     """
     current_time : datetime = schedule.get_current_time()
     morning      : datetime = schedule.get_morning()
-    if current_time > morning:
+    if current_time >= morning:
         morning += timedelta(days=1)
     log.info("Pausing until: " + schedule.time_to_string(morning))
     pause.until(morning)

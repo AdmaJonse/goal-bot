@@ -29,6 +29,7 @@ class Highlight:
         self.event     : Optional[Event]     = None
         self.goal_id   : int                 = int(data["homeScore"]) + int(data["awayScore"])
         self.post_id   : Dict[str, Optional[Dict[str, str]]] = {}
+        self.is_pending: bool                = False
 
         if self.game_data:
             self.event = EventParser(self.game_id, self.goal_id).parse()

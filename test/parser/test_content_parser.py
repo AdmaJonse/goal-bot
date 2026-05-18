@@ -57,6 +57,7 @@ class TestContentParser(unittest.TestCase):
         existing.id = 999
         existing.event = event_obj
         existing.post_id = {}
+        existing.is_pending = False
         existing.get_post.return_value = "Goal text\n\nColorado: 1 Minnesota: 0"
         parser.highlight_list.add(existing)
 
@@ -101,6 +102,7 @@ class TestContentParser(unittest.TestCase):
         existing.id = 999
         existing.event = event_obj
         existing.post_id = {"_queued": None}
+        existing.is_pending = False
         parser.highlight_list.add(existing)
 
         incoming = MagicMock()

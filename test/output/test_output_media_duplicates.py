@@ -13,12 +13,14 @@ class _FakeOutputter:
         self._name = name
         self.post_with_media_calls = 0
         self.reply_with_media_calls = 0
+        self.has_posted_calls = 0
         self.duplicate = False
 
     def name(self) -> str:
         return self._name
 
     def has_posted(self, _text: str) -> bool:
+        self.has_posted_calls += 1
         return self.duplicate
 
     def post_with_media(self, _text: str, _media: str):
@@ -70,6 +72,19 @@ class TestOutputMediaDuplicates(unittest.TestCase):
         self.assertEqual(self.bluesky_outputter.post_with_media_calls, 0)
         download_mock.assert_called_once()
 
+    @patch("src.output.output._download_media_once", return_value=None)
+    @patch("src.output.output._is_remote_media", return_value=False)
+    def test_post_with_media_missing_local_file_skips_all_outputs(self, _remote_mock, download_mock):
+        media = "missing.mp4"
+
+        result = output_module.post_with_media("Minnesota goal", media)
+
+        self.assertIsNone(result.get("twitter"))
+        self.assertIsNone(result.get("bluesky"))
+        self.assertEqual(self.twitter_outputter.post_with_media_calls, 0)
+        self.assertEqual(self.bluesky_outputter.post_with_media_calls, 0)
+        download_mock.assert_called_once()
+
     @patch("src.output.output._download_media_once", return_value="local.mp4")
     @patch("src.output.output._is_remote_media", return_value=False)
     def test_reply_with_media_duplicate_skips_only_one_output(self, _remote_mock, download_mock):
@@ -86,6 +101,41 @@ class TestOutputMediaDuplicates(unittest.TestCase):
         self.assertIsNotNone(result.get("bluesky"))
         self.assertEqual(self.twitter_outputter.reply_with_media_calls, 0)
         self.assertEqual(self.bluesky_outputter.reply_with_media_calls, 1)
+        download_mock.assert_called_once()
+
+    @patch("src.output.output._download_media_once", return_value=None)
+    @patch("src.output.output._is_remote_media", return_value=False)
+    def test_reply_with_media_missing_local_file_skips_all_outputs(self, _remote_mock, download_mock):
+        parents = {"twitter": {"id": "t1"}, "bluesky": {"uri": "u1", "cid": "c1"}}
+
+        result = output_module.reply_with_media(
+            parents,
+            "Goal update\n\nColorado: 4 Minnesota: 3",
+            "missing.mp4",
+        )
+
+        self.assertIsNone(result.get("twitter"))
+        self.assertIsNone(result.get("bluesky"))
+        self.assertEqual(self.twitter_outputter.reply_with_media_calls, 0)
+        self.assertEqual(self.bluesky_outputter.reply_with_media_calls, 0)
+        download_mock.assert_called_once()
+
+    @patch("src.output.output._download_media_once", return_value="local.mp4")
+    def test_post_with_media_uses_precomputed_duplicate_status(self, download_mock):
+        duplicate_status = {"bluesky": False, "twitter": True}
+
+        result = output_module.post_with_media(
+            "Minnesota goal",
+            "https://players.brightcove.net/x/y/index.html?videoId=6394299474112",
+            duplicate_status=duplicate_status,
+        )
+
+        self.assertIsNotNone(result.get("bluesky"))
+        self.assertIsNone(result.get("twitter"))
+        self.assertEqual(self.twitter_outputter.has_posted_calls, 0)
+        self.assertEqual(self.bluesky_outputter.has_posted_calls, 0)
+        self.assertEqual(self.twitter_outputter.post_with_media_calls, 0)
+        self.assertEqual(self.bluesky_outputter.post_with_media_calls, 1)
         download_mock.assert_called_once()
 
     @patch("src.output.output._download_media_once")

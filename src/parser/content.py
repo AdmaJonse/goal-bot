@@ -61,7 +61,7 @@ class ContentParser(Parser):
             self.highlight_list.update(highlight)
             previous = highlight
 
-        if "_pending" in previous.post_id or "_queued" in previous.post_id:
+        if previous.is_pending or "_queued" in previous.post_id:
             return  # Still pending or queued, no retry
 
         # Check if ready for retry
@@ -122,7 +122,6 @@ class ContentParser(Parser):
         if (
             len(highlight.post_id) > 0
             and all(not key.startswith("_") for key in highlight.post_id.keys())
-            and "_pending" not in highlight.post_id
             and all(post_id is None for post_id in highlight.post_id.values())
         ):
             return True

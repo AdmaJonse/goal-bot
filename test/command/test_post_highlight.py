@@ -13,6 +13,7 @@ class _FakeHighlight:
     def __init__(self) -> None:
         self.video = "https://example.test/video"
         self.post_id: Dict[str, Optional[Dict[str, str]]] = {}
+        self.is_pending = False
 
     def get_post(self):
         return "Goal text\n\nColorado: 3 Minnesota: 2"
@@ -63,6 +64,24 @@ class TestPostHighlight(unittest.TestCase):
             highlight.post_id,
             {"bluesky": None, "twitter": None, "_duplicate": None},
         )
+
+    @patch("src.command.post_highlight.output.post_with_media")
+    @patch("src.command.post_highlight.output.has_posted_today")
+    def test_duplicate_status_is_passed_to_post_with_media(self, has_posted_today_mock, post_with_media_mock):
+        duplicate_status = {"bluesky": False, "twitter": True}
+        has_posted_today_mock.return_value = duplicate_status
+        post_with_media_mock.return_value = {"bluesky": None, "twitter": None}
+
+        highlight = _FakeHighlight()
+        command = PostHighlight(highlight)
+        command.execute()
+
+        post_with_media_mock.assert_called_once_with(
+            highlight.get_post(),
+            highlight.video,
+            duplicate_status,
+        )
+        self.assertFalse(highlight.is_pending)
 
 
 if __name__ == "__main__":
