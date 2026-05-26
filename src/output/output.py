@@ -119,7 +119,11 @@ def post_with_media(
 
     for outputter in output.outputters:
         outputter_name = outputter.name()
-        has_posted = duplicate_status.get(outputter_name, False) if duplicate_status is not None else outputter.has_posted(text)
+        has_posted = (
+            duplicate_status.get(outputter_name, False)
+            if duplicate_status is not None
+            else outputter.has_posted(text)
+        )
 
         if has_posted:
             log.warning(outputter.name().capitalize()

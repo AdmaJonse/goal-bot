@@ -519,22 +519,22 @@ class BlueSky(Outputter):
         return self.request(post)
 
 
-    def get_posts_for_reference_day(self) -> List[str]:
+    def _fetch_author_feed(self) -> Optional[dict]:
         """
-        Return account posts from the configured duplicate reference day.
+        Retrieve author feed payload for the authenticated account.
         """
         if self.session is None:
-            return []
+            return None
 
         did = self.session.get("did")
         if did is None:
             log.error("Bluesky - Could not retrieve today's posts.")
-            return []
+            return None
 
         access_token = self._session_tokens.get("access", "")
         if access_token == "":
             log.error("Bluesky - Missing access token for author feed lookup.")
-            return []
+            return None
 
         try:
             response = requests.get(
@@ -548,19 +548,22 @@ class BlueSky(Outputter):
                 timeout=REQUEST_TIMEOUT,
             )
             response.raise_for_status()
-            feed_payload = response.json()
+            return response.json()
         except (requests.exceptions.RequestException, ValueError) as error:
             log.error("Bluesky - Could not retrieve author feed: " + str(error))
-            return []
+            return None
 
-        result = []
+
+    def _extract_reference_day_posts(self, feed_payload: dict) -> List[str]:
+        """
+        Extract normalized post text for the configured local reference-day window.
+        """
+        result: List[str] = []
         target_day = self.duplicate_reference_date.date()
         next_day = (self.duplicate_reference_date + timedelta(days=1)).date()
 
         for feed_item in feed_payload.get("feed", []):
-            post = feed_item.get("post", {})
-            record = post.get("record", {})
-
+            record = feed_item.get("post", {}).get("record", {})
             created_at = record.get("createdAt")
             text = record.get("text")
             if created_at is None or text is None:
@@ -569,7 +572,17 @@ class BlueSky(Outputter):
             utc_time = parser.parse(created_at)
             post_date = schedule.utc_to_local(utc_time).date()
             if post_date in (target_day, next_day):
-                normalized_text = self._normalize_post_text(text)
-                result.append(normalized_text)
+                result.append(self._normalize_post_text(text))
 
         return result
+
+
+    def get_posts_for_reference_day(self) -> List[str]:
+        """
+        Return account posts from the configured duplicate reference day.
+        """
+        feed_payload = self._fetch_author_feed()
+        if feed_payload is None:
+            return []
+
+        return self._extract_reference_day_posts(feed_payload)
