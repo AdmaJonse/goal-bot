@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Optional
 from dateutil import parser
 
 import atproto
-from atproto_client import exceptions as atproto_exceptions
 import requests
 
 from dotenv import load_dotenv
@@ -532,21 +531,45 @@ class BlueSky(Outputter):
             log.error("Bluesky - Could not retrieve today's posts.")
             return []
 
+        access_token = self._session_tokens.get("access", "")
+        if access_token == "":
+            log.error("Bluesky - Missing access token for author feed lookup.")
+            return []
+
         try:
-            feed = self.client.get_author_feed(actor=did, limit=100)
-        except (atproto_exceptions.UnauthorizedError,
-            atproto_exceptions.RequestException) as error:
+            response = requests.get(
+                BASE_URL + "app.bsky.feed.getAuthorFeed",
+                params={
+                    "actor": did,
+                    "includePins": "false",
+                    "limit": 100,
+                },
+                headers={"Authorization": "Bearer " + access_token},
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            feed_payload = response.json()
+        except (requests.exceptions.RequestException, ValueError) as error:
             log.error("Bluesky - Could not retrieve author feed: " + str(error))
             return []
 
         result = []
         target_day = self.duplicate_reference_date.date()
         next_day = (self.duplicate_reference_date + timedelta(days=1)).date()
-        if feed is not None:
-            for post in feed.feed:
-                utc_time     = parser.parse(post.post.record.created_at)
-                post_date    = schedule.utc_to_local(utc_time).date()
-                if post_date in (target_day, next_day):
-                    normalized_text = self._normalize_post_text(post.post.record.text)
-                    result.append(normalized_text)
+
+        for feed_item in feed_payload.get("feed", []):
+            post = feed_item.get("post", {})
+            record = post.get("record", {})
+
+            created_at = record.get("createdAt")
+            text = record.get("text")
+            if created_at is None or text is None:
+                continue
+
+            utc_time = parser.parse(created_at)
+            post_date = schedule.utc_to_local(utc_time).date()
+            if post_date in (target_day, next_day):
+                normalized_text = self._normalize_post_text(text)
+                result.append(normalized_text)
+
         return result
