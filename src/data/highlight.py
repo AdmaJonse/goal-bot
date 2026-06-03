@@ -23,17 +23,25 @@ class Highlight:
 
     def __init__(self, game_id, data) -> None:
         self.id        : int                 = int(data["highlightClip"])
-        self.video     : str                 = VIDEO_URL + str(self.id)
         self.game_id   : int                 = game_id
         self.game_data : Optional[GameData]  = GameDataParser(self.game_id).parse()
         self.event     : Optional[Event]     = None
         self.goal_id   : int                 = int(data["homeScore"]) + int(data["awayScore"])
         self.post_id   : Dict[str, Optional[Dict[str, str]]] = {}
+        self.is_pending: bool                = False
 
         if self.game_data:
             self.event = EventParser(self.game_id, self.goal_id).parse()
         else:
             log.error("Game data is null for game: " + str(game_id))
+
+
+    @property
+    def video(self) -> str:
+        """
+        Return the Brightcove URL for this highlight.
+        """
+        return VIDEO_URL + str(self.id)
 
 
     def __str__(self) -> str:

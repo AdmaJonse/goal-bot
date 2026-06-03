@@ -8,12 +8,13 @@ from typing import List, Optional
 import pause
 
 from src import schedule
-from src.command.command_queue import command_queue, State
+from src.command.command_queue import command_queue, State, Shutdown
 from src.command.check_game_status import CheckGameStatus
 from src.command.check_health import CheckHealth
 from src.game_thread import GameThread
 from src.logger import log
 from src.output import output
+from src.parser.content import ContentParser
 from src.thread_list import ThreadList
 
 threads : ThreadList = ThreadList()
@@ -24,7 +25,7 @@ def wait_until_morning() -> None:
     """
     current_time : datetime = schedule.get_current_time()
     morning      : datetime = schedule.get_morning()
-    if current_time > morning:
+    if current_time >= morning:
         morning += timedelta(days=1)
     log.info("Pausing until: " + schedule.time_to_string(morning))
     pause.until(morning)
@@ -83,10 +84,9 @@ def check_for_updates() -> None:
             # Start the command server. This call will block until the shutdown command is executed.
             command_queue.start()
 
-            status_thread.join()
-
             # Stop checking the status of games
             threads.clear()
+            status_thread.join()
             output.clear_posts()
             log.info("All games are finished for the day. Pausing until tomorrow.")
 
@@ -94,3 +94,25 @@ def check_for_updates() -> None:
             log.info("There are no games today. Pausing until tomorrow.")
 
         wait_until_morning()
+
+
+def run_for_date(target_date: datetime) -> None:
+    """
+    Run a single pass for all games on the target date and then exit.
+    """
+    log.flush()
+    log.info("Checking for games on " + schedule.date_to_string(target_date) + "...")
+
+    games : Optional[List[int]] = schedule.get_games_for_date(target_date)
+    if not games:
+        log.info("There are no games on " + schedule.date_to_string(target_date) + ".")
+        return
+
+    parse_time = schedule.get_current_time()
+    for game in games:
+        ContentParser(game, parse_time).parse()
+
+    command_queue.enqueue(Shutdown())
+    command_queue.start()
+    output.clear_posts()
+    log.info("One-shot run complete for " + schedule.date_to_string(target_date) + ".")

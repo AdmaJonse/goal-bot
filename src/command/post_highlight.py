@@ -24,15 +24,51 @@ class PostHighlight(Command):
         """
         Execute the command.
         """
-        text    : Optional[str] = self.highlight.get_post()
-        footer  : Optional[str] = self.highlight.get_footer()
+        self.highlight.is_pending = True
 
-        if text is None:
-            log.error("Could not post highlight - no post text.")
-            return
+        try:
+            text    : Optional[str] = self.highlight.get_post()
+            footer  : Optional[str] = self.highlight.get_footer()
 
-        if footer is None:
-            log.error("Could not post highlight - no footer text")
-            return
+            if text is None:
+                log.error("Could not post highlight - no post text.")
+                self.highlight.post_id = {}
+                return
 
-        self.highlight.post_id = output.post_with_media(text, self.highlight.video)
+            if footer is None:
+                log.error("Could not post highlight - no footer text")
+                self.highlight.post_id = {}
+                return
+
+            duplicate_status = output.has_posted_today(text)
+            all_outputs_duplicate = len(duplicate_status) > 0 and all(duplicate_status.values())
+            any_output_duplicate = any(duplicate_status.values())
+            result = output.post_with_media(
+                text,
+                self.highlight.video,
+                duplicate_status,
+            )
+
+            if any(post_id is not None for post_id in result.values()):
+                self.highlight.post_id = result
+                return
+
+            if all_outputs_duplicate:
+                # Terminal duplicate for this day; keep sentinel to avoid retries.
+                terminal_duplicate_result = dict(result)
+                terminal_duplicate_result["_duplicate"] = None
+                self.highlight.post_id = terminal_duplicate_result
+                return
+
+            if any_output_duplicate:
+                # At least one output already posted this highlight for the day.
+                # Avoid retry loops when remaining outputs are unavailable (for example 429).
+                terminal_duplicate_result = dict(result)
+                terminal_duplicate_result["_duplicate"] = None
+                self.highlight.post_id = terminal_duplicate_result
+                return
+
+            # Transient failure (for example, media temporarily unavailable). Allow retry.
+            self.highlight.post_id = {}
+        finally:
+            self.highlight.is_pending = False

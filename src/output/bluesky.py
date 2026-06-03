@@ -4,11 +4,12 @@ authenticate, post and reply.
 """
 
 import os
+import socket
 import time
 import re
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from os.path import join, dirname, abspath
 from typing import Any, Dict, List, Optional
 
@@ -121,13 +122,21 @@ class BlueSky(Outputter):
 
     def __init__(self) -> None:
         super().__init__()
+        self.duplicate_reference_date: datetime = schedule.get_current_date()
         self.auth         : Authentication = Authentication()
         self.session      : Optional[dict] = None
         self.client       : atproto.Client = atproto.Client()
-        self.access_token  : str = ""
-        self.refresh_token : str = ""
+        self._session_tokens: dict = {}
         self.posts        : List[str] = []
         self._initialized : bool = False
+
+
+    def _clear_session_state(self) -> None:
+        """
+        Clear in-memory session and token state after auth failures.
+        """
+        self.session = None
+        self._session_tokens = {}
 
 
     def name(self) -> str:
@@ -139,32 +148,88 @@ class BlueSky(Outputter):
 
     def _ensure_initialized(self) -> None:
         """
-        Perform one-time network setup: log in the atproto client, create an
-        API session, and load today's posts for duplicate detection.
+        Perform one-time network setup: create an API session and load
+        reference-day posts for duplicate detection.
         Called lazily on the first post or reply so that importing this module
         does not require live credentials.
         """
         if not self._initialized:
-            self.client.login(self.auth.handle, self.auth.password)
-            self.create_session()
-            self.posts = self.get_today_posts()
+            if not self.create_session():
+                return
+            self.posts = self.get_posts_for_reference_day()
             self._initialized = True
 
 
-    def create_session(self):
+    def set_duplicate_reference_date(self, value: datetime) -> None:
+        """
+        Set the date used to query duplicate history, then refresh cache.
+        """
+        self.duplicate_reference_date = value
+        if self._initialized:
+            self.posts = self.get_posts_for_reference_day()
+
+
+    def create_session(self) -> bool:
         """
         Create a new session with the Bluesky API.
         """
-        response = requests.post(
-            BASE_URL + "com.atproto.server.createSession",
-            json={
-                "identifier": self.auth.handle,
-                "password": self.auth.password
-                },
-            timeout=REQUEST_TIMEOUT)
-        self.session       = response.json()
-        self.access_token  = self.session["accessJwt"]
-        self.refresh_token = self.session["refreshJwt"]
+        try:
+            response = requests.post(
+                BASE_URL + "com.atproto.server.createSession",
+                json={
+                    "identifier": self.auth.handle,
+                    "password": self.auth.password
+                    },
+                timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException as error:
+            log.error("Bluesky - createSession request failed: " + str(error))
+            self._clear_session_state()
+            return False
+
+        if not response.ok:
+            log.error(
+                "Bluesky - createSession failed with status "
+                + str(response.status_code)
+                + ": "
+                + response.text
+            )
+            self._clear_session_state()
+            return False
+
+        try:
+            session_payload = response.json()
+        except ValueError:
+            log.error("Bluesky - createSession returned invalid JSON response.")
+            self._clear_session_state()
+            return False
+
+        access_token = session_payload.get("accessJwt")
+        refresh_token = session_payload.get("refreshJwt")
+
+        if access_token is None or refresh_token is None:
+            log.error(
+                "Bluesky - createSession missing required token fields. "
+                + "response="
+                + str(session_payload)
+            )
+            self._clear_session_state()
+            return False
+
+        self.session = session_payload
+        self._session_tokens = {
+            "access": access_token,
+            "refresh": refresh_token,
+        }
+        return True
+
+
+    def has_posted(self, text: str) -> bool:
+        """
+        Ensure Bluesky state is initialized before duplicate checks.
+        This allows output-level duplicate filtering to work before media download.
+        """
+        self._ensure_initialized()
+        return super().has_posted(text)
 
 
     def request(self, post : dict) -> Optional[Dict[str, str]]:
@@ -172,17 +237,20 @@ class BlueSky(Outputter):
         Send a POST request to the Bluesky API with the given post data.
         """
 
-        self.create_session()
-
-        if self.session is None:
-            log.error("Bluesky - Could not create session.")
+        if not self.create_session() or self.session is None:
             return None
 
+        did = self.session.get("did")
+        if did is None:
+            log.error("Bluesky - Session missing did.")
+            return None
+
+        access_token = self._session_tokens.get("access", "")
         response = requests.post(
                     BASE_URL + "com.atproto.repo.createRecord",
-                    headers={"Authorization": "Bearer " + self.access_token},
+                    headers={"Authorization": "Bearer " + access_token},
                     json={
-                        "repo": self.session["did"],
+                        "repo": did,
                         "collection": "app.bsky.feed.post",
                         "record": post,
                     },
@@ -190,10 +258,12 @@ class BlueSky(Outputter):
 
         if response.ok:
             self.add_post(post["text"])
-            return {
+            result = {
                 "uri": response.json()["uri"],
                 "cid": response.json()["cid"]
             }
+            log.info("Bluesky - Post created successfully. uri=" + result["uri"])
+            return result
 
         log.error("The request failed: " + response.text)
         return None
@@ -207,13 +277,15 @@ class BlueSky(Outputter):
         log.info("Bluesky - Post: " + utils.strip_text(text))
 
         self._ensure_initialized()
+        if self.session is None:
+            return None
 
         if len(text) > MAX_LENGTH:
             log.error("Bluesky - post is longer than the maximum length")
             return None
 
-        if text in self.posts:
-            log.warning("Bluesky - Skipping duplicate post")
+        if self.has_posted(text):
+            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         post : dict[Any, Any] = {
@@ -234,6 +306,8 @@ class BlueSky(Outputter):
         log.info("Bluesky - Reply: " + utils.strip_text(text))
 
         self._ensure_initialized()
+        if self.session is None:
+            return None
 
         if parent is None:
             log.error("Bluesky - parent post is missing")
@@ -243,8 +317,8 @@ class BlueSky(Outputter):
             log.error("Bluesky - post is longer than the maximum length")
             return None
 
-        if text in self.posts:
-            log.warning("Bluesky - Skipping duplicate post")
+        if self.has_posted(text):
+            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         if "cid" not in parent or "uri" not in parent:
@@ -271,52 +345,86 @@ class BlueSky(Outputter):
         return self.request(post)
 
 
+    def _perform_blob_upload(self, data: bytes) -> Optional[requests.Response]:
+        """Helper method to perform blob upload with retries."""
+        upload_attempts = 3
+        response = None
+        for attempt in range(1, upload_attempts + 1):
+            if not self.create_session():
+                attempt_str = f"{attempt}/{upload_attempts}"
+                msg = f"Could not create session for video upload attempt {attempt_str}."
+                log.error("Bluesky - " + msg)
+                if attempt < upload_attempts:
+                    time.sleep(10)
+                continue
+            try:
+                socket.setdefaulttimeout(120)
+                access_token = self._session_tokens.get("access", "")
+                response = requests.post(
+                    BASE_URL + "com.atproto.repo.uploadBlob",
+                    headers={
+                        "Content-Type": "video/mp4",
+                        "Authorization": "Bearer " + access_token,
+                    },
+                    data=data,
+                    timeout=120)
+                break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                log.error(f"Bluesky - Video upload attempt {attempt} failed: {e}")
+                if attempt < upload_attempts:
+                    time.sleep(10)
+            finally:
+                socket.setdefaulttimeout(None)
+        return response
+
+
     def upload_video(self, url : str) -> Optional[str]:
         """
         Download the .mp4 from the given URL, perform a media upload,
         clean up and then return the media ID string.
         """
-        filename : str  = "highlight" + url[-8:-3] + ".mp4"
-        data     : Optional[bytes] = None
+        filename: str = url
+        downloaded_here: bool = False
+        data: Optional[bytes] = None
 
-        log.verbose("Bluesky - uploading video: " + filename)
+        if not os.path.exists(url):
+            filename = "highlight" + url[-8:-3] + ".mp4"
+            downloaded_here = True
 
-        video.download(url, filename)
+            if not video.download(url, filename):
+                log.error("Bluesky - Could not download from url: " + url)
+                return None
 
-        if not os.path.exists(filename):
-            log.error("Bluesky - Could not download from url: " + url)
-            return None
+        log.info("Bluesky - uploading video: " + filename)
 
-        video.normalize_video(filename)
-        data = video.read(filename)
+        try:
+            video.normalize_video(filename)
+            data = video.read(filename)
 
-        if data is None:
-            log.error("Bluesky - Failed to read video file: " + filename)
-            return None
+            if data is None:
+                log.error("Bluesky - Failed to read video file: " + filename)
+                return None
 
-        self.create_session()
-        response = requests.post(
-            BASE_URL + "com.atproto.repo.uploadBlob",
-            headers={
-                "Content-Type": "video/mp4",
-                "Authorization": "Bearer " + self.access_token,
-            },
-            data=data,
-            timeout=300)
+            response = self._perform_blob_upload(data)
 
-        video.remove(filename)
+            if response is None:
+                log.error("Bluesky - All upload attempts failed: " + filename)
+                return None
 
-        if not response.ok:
-            log.error("Bluesky - Failed to upload blob: " + filename)
-            return None
+            if not response.ok:
+                log.error("Bluesky - Failed to upload blob: " + filename)
+                return None
 
-        blob = response.json()["blob"]
-        log.verbose("Bluesky - Blob uploaded: " + str(blob))
+            blob = response.json()["blob"]
+            log.info("Bluesky - Blob uploaded: " + str(blob))
 
-        log.verbose("Bluesky - Waiting for blob upload to complete...")
-        time.sleep(30)
+            log.info("Bluesky - Waiting for blob upload to complete...")
+            time.sleep(30)
 
-        return blob
+            return blob
+        finally:
+            if downloaded_here and os.path.exists(filename):
+                video.remove(filename)
 
 
     def post_with_media(self, text : str, media : str) -> Optional[Dict[str, str]]:
@@ -326,12 +434,12 @@ class BlueSky(Outputter):
 
         log.info("Bluesky - Post with media: " + utils.strip_text(text))
 
-        if len(text) > MAX_LENGTH:
-            log.error("Bluesky - post is longer than the maximum length")
+        self._ensure_initialized()
+        if self.session is None:
             return None
 
-        if utils.strip_text(text) in self.posts:
-            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
+        if len(text) > MAX_LENGTH:
+            log.error("Bluesky - post is longer than the maximum length")
             return None
 
         blob = self.upload_video(media)
@@ -364,16 +472,16 @@ class BlueSky(Outputter):
 
         log.info("Bluesky - Reply with media: " + utils.strip_text(text))
 
+        self._ensure_initialized()
+        if self.session is None:
+            return None
+
         if parent is None:
             log.error("Bluesky - parent post is missing")
             return None
 
         if len(text) > MAX_LENGTH:
             log.error("Bluesky - post is longer than the maximum length")
-            return None
-
-        if utils.strip_text(text) in self.posts:
-            log.warning("Bluesky - Skipping duplicate post: " + utils.strip_text(text))
             return None
 
         if "cid" not in parent or "uri" not in parent:
@@ -411,40 +519,70 @@ class BlueSky(Outputter):
         return self.request(post)
 
 
-    def add_post(self, text : str):
+    def _fetch_author_feed(self) -> Optional[dict]:
         """
-        Add the given post to our list of posts.
-        """
-        self.posts.append(utils.strip_text(text))
-
-
-    def clear_posts(self):
-        """
-        Clear the list of posts.
-        """
-        self.posts = []
-
-
-    def get_today_posts(self) -> List[str]:
-        """
-        Return a list of posts that were created today. If a query is
-        provided, return only posts that include the query as a substring.
+        Retrieve author feed payload for the authenticated account.
         """
         if self.session is None:
-            return []
+            return None
 
         did = self.session.get("did")
         if did is None:
             log.error("Bluesky - Could not retrieve today's posts.")
+            return None
+
+        access_token = self._session_tokens.get("access", "")
+        if access_token == "":
+            log.error("Bluesky - Missing access token for author feed lookup.")
+            return None
+
+        try:
+            response = requests.get(
+                BASE_URL + "app.bsky.feed.getAuthorFeed",
+                params={
+                    "actor": did,
+                    "includePins": "false",
+                    "limit": 100,
+                },
+                headers={"Authorization": "Bearer " + access_token},
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            return response.json()
+        except (requests.exceptions.RequestException, ValueError) as error:
+            log.error("Bluesky - Could not retrieve author feed: " + str(error))
+            return None
+
+
+    def _extract_reference_day_posts(self, feed_payload: dict) -> List[str]:
+        """
+        Extract normalized post text for the configured local reference-day window.
+        """
+        result: List[str] = []
+        target_day = self.duplicate_reference_date.date()
+        next_day = (self.duplicate_reference_date + timedelta(days=1)).date()
+
+        for feed_item in feed_payload.get("feed", []):
+            record = feed_item.get("post", {}).get("record", {})
+            created_at = record.get("createdAt")
+            text = record.get("text")
+            if created_at is None or text is None:
+                continue
+
+            utc_time = parser.parse(created_at)
+            post_date = schedule.utc_to_local(utc_time).date()
+            if post_date in (target_day, next_day):
+                result.append(self._normalize_post_text(text))
+
+        return result
+
+
+    def get_posts_for_reference_day(self) -> List[str]:
+        """
+        Return account posts from the configured duplicate reference day.
+        """
+        feed_payload = self._fetch_author_feed()
+        if feed_payload is None:
             return []
 
-        feed = self.client.get_author_feed(actor=did, limit=100)
-        result = []
-        if feed is not None:
-            for post in feed.feed:
-                utc_time     = parser.parse(post.post.record.created_at)
-                post_date    = schedule.utc_to_local(utc_time).date()
-                current_date = schedule.get_current_date().date()
-                if post_date == current_date:
-                    result.append(utils.strip_text(post.post.record.text))
-        return result
+        return self._extract_reference_day_posts(feed_payload)
